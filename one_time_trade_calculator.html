@@ -16,6 +16,7 @@
       --profit-color: #16a34a;
       --loss-color: #dc2626;
       --modified-color: #f97316;
+      --active-color: #3b82f6;
     }
     * { box-sizing: border-box; }
     body {
@@ -51,6 +52,8 @@
     .input-group { margin-bottom: 16px; }
     .modified { color: var(--modified-color); font-weight: 600; }
     .btn-disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-active { background-color: var(--active-color); color: white; }
+    .btn-group { display: flex; gap: 8px; }
   </style>
 </head>
 <body>
@@ -85,8 +88,9 @@
   </div>
 
   <div class="flex-between">
-    <div>
+    <div class="btn-group">
       <button id="applyBtn" class="btn btn-disabled" style="background:var(--accent);color:#fff">计算</button>
+      <button id="fractionBtn" class="btn btn-secondary">碎股模式</button>
       <button id="resetBtn" class="btn btn-secondary">重置</button>
     </div>
     <div class="badge" id="statusBadge">使用默认参数</div>
@@ -105,7 +109,7 @@
     const DEFAULT_BUDGET = 10000;
 
     let side = 'long';
-    let isParamsModified = false;
+    let fractionMode = false; // 碎股模式状态
 
     const priceInput = document.getElementById('price');
     const tpInput = document.getElementById('tpPercent');
@@ -113,6 +117,7 @@
     const budgetInput = document.getElementById('budget');
     const applyBtn = document.getElementById('applyBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const fractionBtn = document.getElementById('fractionBtn');
     const statusBadge = document.getElementById('statusBadge');
     const resultArea = document.getElementById('resultArea');
     const resultText = document.getElementById('resultText');
@@ -126,7 +131,6 @@
       tpInput.value = defaults.tp;
       slInput.value = defaults.sl;
       budgetInput.value = DEFAULT_BUDGET;
-      isParamsModified = false;
       updateButtonState();
       updateStatusBadge();
     }
@@ -143,8 +147,14 @@
         shortBtn.classList.add('active');
         longBtn.classList.remove('active');
       }
+      
+      // 重置参数为默认值
       updatePercentDisplays();
-      calculate();
+      
+      // 只有在参数未修改时才自动计算
+      if (!checkParamsModified() && parseFloat(priceInput.value) > 0) {
+        calculate();
+      }
     }
 
     // 检查参数是否被修改
@@ -158,7 +168,7 @@
       const isSlModified = slValue !== defaults.sl;
       const isBudgetModified = budgetValue !== DEFAULT_BUDGET;
       
-      return isTpModified || isSlModified || isBudgetModified;
+      return isTpModified || isSlModified || isBudgetModified || fractionMode;
     }
 
     // 更新计算按钮状态
@@ -204,7 +214,14 @@
       const rawSl = price * (1 + slPercent / 100);
       const adjTp = adjustPrice(rawTp, side);
       const adjSl = adjustPrice(rawSl, side);
-      const shares = Math.floor(budget / price);
+      
+      // 计算股数（根据碎股模式）
+      let shares;
+      if (fractionMode) {
+        shares = parseFloat((budget / price).toFixed(4)); // 保留4位小数
+      } else {
+        shares = Math.floor(budget / price);
+      }
 
       // 计算预计收益（止盈时）
       let profit;
@@ -234,7 +251,7 @@
         </div>
         <div class="result-row">
           <span>可买股数：</span>
-          <span class="result-value">${shares}</span>
+          <span class="result-value">${shares}${fractionMode ? ' (碎股)' : ''}</span>
         </div>
         <div class="result-row" style="margin-top:16px;">
           <span>止盈价格：</span>
@@ -290,17 +307,42 @@
     shortBtn.addEventListener('click', () => setSide('short'));
 
     priceInput.addEventListener('input', () => {
-      calculate();
+      // 只有在参数未修改时才自动计算
+      if (!checkParamsModified()) {
+        calculate();
+      }
       updateButtonState();
     });
 
     // 监听参数输入变化
     [tpInput, slInput, budgetInput].forEach(input => {
       input.addEventListener('input', () => {
-        isParamsModified = checkParamsModified();
         updateButtonState();
         updateStatusBadge();
       });
+    });
+
+    // 碎股模式按钮
+    fractionBtn.addEventListener('click', () => {
+      const wasFractionMode = fractionMode;
+      fractionMode = !fractionMode;
+      
+      if (fractionMode) {
+        fractionBtn.classList.add('btn-active');
+        fractionBtn.textContent = '碎股模式 (开)';
+      } else {
+        fractionBtn.classList.remove('btn-active');
+        fractionBtn.textContent = '碎股模式 (关)';
+      }
+      
+      // 更新参数状态
+      updateButtonState();
+      updateStatusBadge();
+      
+      // 只有在关闭碎股模式且参数未修改时才自动计算
+      if (!fractionMode && !checkParamsModified() && parseFloat(priceInput.value) > 0) {
+        calculate();
+      }
     });
 
     applyBtn.addEventListener('click', () => {
@@ -319,6 +361,14 @@
       priceInput.value = '';
       resultArea.style.display = 'none';
       setSide('long'); // 重置时回到多单模式
+      
+      // 重置碎股模式
+      fractionMode = false;
+      fractionBtn.classList.remove('btn-active');
+      fractionBtn.textContent = '碎股模式';
+      
+      updateButtonState();
+      updateStatusBadge();
     });
 
     // 初始化
