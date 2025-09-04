@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <!-- Written by ChatGPT GPT-5 Free on Thursday, 4 September 2025 -->
+  <!-- Edit by Deepseek R1 thru Tencent Yuanbao on Thursday, 4 September 2025 -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>止盈止损计算器</title>
@@ -12,6 +13,9 @@
       --neutral-bg: #f8fafc;
       --accent:#2563eb;
       --muted:#475569;
+      --profit-color: #16a34a;
+      --loss-color: #dc2626;
+      --modified-color: #f97316;
     }
     * { box-sizing: border-box; }
     body {
@@ -40,12 +44,19 @@
     .note { font-size: 13px; color: #b45309; margin-top: 8px; }
     .small { font-size: 13px; color: var(--muted); }
     .badge { display:inline-block; padding:6px 8px; border-radius:8px; background:rgba(0,0,0,0.05); font-size:13px; color:#111827 }
+    .result-row { display: flex; justify-content: space-between; margin-top: 8px; }
+    .result-value { font-weight: 700; }
+    .profit { color: var(--profit-color); }
+    .loss { color: var(--loss-color); }
+    .input-group { margin-bottom: 16px; }
+    .modified { color: var(--modified-color); font-weight: 600; }
+    .btn-disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <h1>止盈止损计算器</h1>
 
-  <div>
+  <div class="input-group">
     <label>当前价格</label>
     <input id="price" type="number" step="0.0001" placeholder="输入当前价格" />
   </div>
@@ -68,17 +79,17 @@
     </div>
   </div>
 
-  <div>
+  <div class="input-group">
     <label>预算 (默认 10000)</label>
     <input id="budget" type="number" step="0.01" />
   </div>
 
   <div class="flex-between">
     <div>
-      <button id="applyBtn" class="btn" style="background:var(--accent);color:#fff">计算</button>
+      <button id="applyBtn" class="btn btn-disabled" style="background:var(--accent);color:#fff">计算</button>
       <button id="resetBtn" class="btn btn-secondary">重置</button>
     </div>
-    <div class="badge" id="statusBadge">一次性设置未使用</div>
+    <div class="badge" id="statusBadge">使用默认参数</div>
   </div>
 
   <div class="result" id="resultArea" style="display:none;">
@@ -93,8 +104,8 @@
     };
     const DEFAULT_BUDGET = 10000;
 
-    let oneTimeCustom = null;
     let side = 'long';
+    let isParamsModified = false;
 
     const priceInput = document.getElementById('price');
     const tpInput = document.getElementById('tpPercent');
@@ -109,49 +120,85 @@
     const longBtn = document.getElementById('longBtn');
     const shortBtn = document.getElementById('shortBtn');
 
+    // 初始化默认值
     function updatePercentDisplays() {
       const defaults = DEFAULTS[side];
       tpInput.value = defaults.tp;
       slInput.value = defaults.sl;
       budgetInput.value = DEFAULT_BUDGET;
+      isParamsModified = false;
+      updateButtonState();
+      updateStatusBadge();
     }
 
+    // 设置多单/空单模式
     function setSide(s) {
       side = s;
       if (side === 'long') {
         document.body.style.background = 'var(--green-bg)';
+        longBtn.classList.add('active');
+        shortBtn.classList.remove('active');
       } else {
         document.body.style.background = 'var(--red-bg)';
+        shortBtn.classList.add('active');
+        longBtn.classList.remove('active');
       }
-      if (!oneTimeCustom) updatePercentDisplays();
+      updatePercentDisplays();
+      calculate();
     }
 
-    longBtn.addEventListener('click', () => setSide('long'));
-    shortBtn.addEventListener('click', () => setSide('short'));
+    // 检查参数是否被修改
+    function checkParamsModified() {
+      const defaults = DEFAULTS[side];
+      const tpValue = parseFloat(tpInput.value);
+      const slValue = parseFloat(slInput.value);
+      const budgetValue = parseFloat(budgetInput.value);
+      
+      const isTpModified = tpValue !== defaults.tp;
+      const isSlModified = slValue !== defaults.sl;
+      const isBudgetModified = budgetValue !== DEFAULT_BUDGET;
+      
+      return isTpModified || isSlModified || isBudgetModified;
+    }
 
-    applyBtn.addEventListener('click', () => {
+    // 更新计算按钮状态
+    function updateButtonState() {
+      const price = parseFloat(priceInput.value);
+      const paramsModified = checkParamsModified();
+      
+      if (isFinite(price) && price > 0 && paramsModified) {
+        applyBtn.classList.remove('btn-disabled');
+        applyBtn.style.opacity = "1";
+        applyBtn.style.cursor = "pointer";
+      } else {
+        applyBtn.classList.add('btn-disabled');
+        applyBtn.style.opacity = "0.6";
+        applyBtn.style.cursor = "not-allowed";
+      }
+    }
+
+    // 更新状态徽章
+    function updateStatusBadge() {
+      const paramsModified = checkParamsModified();
+      
+      if (paramsModified) {
+        statusBadge.innerHTML = '<span class="modified">参数已修改</span>';
+      } else {
+        statusBadge.textContent = '使用默认参数';
+      }
+    }
+
+    // 计算止盈止损价格和收益
+    function calculate() {
       const price = parseFloat(priceInput.value);
       if (!isFinite(price) || price <= 0) {
-        alert('请输入有效的当前价格');
+        resultArea.style.display = 'none';
         return;
       }
 
-      let tpPercent, slPercent, budget;
-
-      if (!oneTimeCustom) {
-        tpPercent = parseFloat(tpInput.value);
-        slPercent = parseFloat(slInput.value);
-        budget = parseFloat(budgetInput.value);
-        if (!isFinite(tpPercent) || !isFinite(slPercent) || !isFinite(budget)) {
-          alert('请输入有效的百分比和预算');
-          return;
-        }
-        oneTimeCustom = { tp: tpPercent, sl: slPercent, budget: budget };
-      }
-
-      tpPercent = oneTimeCustom.tp;
-      slPercent = oneTimeCustom.sl;
-      budget = oneTimeCustom.budget;
+      const tpPercent = parseFloat(tpInput.value) || DEFAULTS[side].tp;
+      const slPercent = parseFloat(slInput.value) || DEFAULTS[side].sl;
+      const budget = parseFloat(budgetInput.value) || DEFAULT_BUDGET;
 
       const rawTp = price * (1 + tpPercent / 100);
       const rawSl = price * (1 + slPercent / 100);
@@ -159,36 +206,71 @@
       const adjSl = adjustPrice(rawSl, side);
       const shares = Math.floor(budget / price);
 
-      resultArea.style.display = 'block';
-      resultText.innerHTML = '<div>方向：' + (side === 'long' ? '多单' : '空单') + '</div>'
-        + '<div>预算：' + budget.toFixed(2) + '</div>'
-        + '<div>可买股数：' + shares + '</div>'
-        + '<div style="margin-top:8px;font-weight:700">止盈价格：' + adjTp + ' (' + roundTo(rawTp) + ')</div>'
-        + '<div style="margin-top:6px;font-weight:700">止损价格：' + adjSl + ' (' + roundTo(rawSl) + ')</div>';
-
-      if (tpPercent !== DEFAULTS[side].tp || slPercent !== DEFAULTS[side].sl || budget !== DEFAULT_BUDGET) {
-        noteArea.style.display = 'block';
-        noteArea.textContent = '已使用一次性自定义参数，下次计算将恢复默认';
-        statusBadge.textContent = '一次性设置已使用并清除';
+      // 计算预计收益（止盈时）
+      let profit;
+      if (side === 'long') {
+        profit = shares * (adjTp - price);
       } else {
-        noteArea.style.display = 'none';
-        statusBadge.textContent = '使用默认参数';
+        profit = shares * (price - adjTp);
       }
 
-      oneTimeCustom = null;
-      updatePercentDisplays();
-    });
+      // 计算预计损失（止损时）
+      let loss;
+      if (side === 'long') {
+        loss = shares * (adjSl - price);
+      } else {
+        loss = shares * (price - adjSl);
+      }
 
-    resetBtn.addEventListener('click', () => {
-      oneTimeCustom = null;
-      updatePercentDisplays();
-      resultArea.style.display = 'none';
-      statusBadge.textContent = '一次性设置未使用';
-      document.body.style.background = 'var(--neutral-bg)';
-    });
+      resultArea.style.display = 'block';
+      resultText.innerHTML = `
+        <div class="result-row">
+          <span>方向：</span>
+          <span class="result-value">${side === 'long' ? '多单' : '空单'}</span>
+        </div>
+        <div class="result-row">
+          <span>预算：</span>
+          <span class="result-value">${budget.toFixed(2)}</span>
+        </div>
+        <div class="result-row">
+          <span>可买股数：</span>
+          <span class="result-value">${shares}</span>
+        </div>
+        <div class="result-row" style="margin-top:16px;">
+          <span>止盈价格：</span>
+          <div>
+            <span class="result-value">${adjTp}</span>
+            <span class="small">(${roundTo(rawTp)})</span>
+          </div>
+        </div>
+        <div class="result-row">
+          <span>预计收益：</span>
+          <span class="result-value ${profit >= 0 ? 'profit' : 'loss'}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</span>
+        </div>
+        <div class="result-row" style="margin-top:16px;">
+          <span>止损价格：</span>
+          <div>
+            <span class="result-value">${adjSl}</span>
+            <span class="small">(${roundTo(rawSl)})</span>
+          </div>
+        </div>
+        <div class="result-row">
+          <span>预计损失：</span>
+          <span class="result-value ${loss >= 0 ? 'profit' : 'loss'}">${loss >= 0 ? '+' : ''}${loss.toFixed(2)}</span>
+        </div>
+      `;
 
-    function roundTo(x) { return parseFloat(x.toFixed(8)); }
+      // 更新状态徽章
+      const paramsModified = checkParamsModified();
+      if (paramsModified) {
+        noteArea.style.display = 'block';
+        noteArea.textContent = '使用自定义参数计算';
+      } else {
+        noteArea.style.display = 'none';
+      }
+    }
 
+    // 价格调整函数
     function adjustPrice(raw, side) {
       const factor = 100;
       let val;
@@ -200,7 +282,46 @@
       return val.toFixed(2);
     }
 
-    // 默认进入网站就是多单模式
+    // 四舍五入到指定精度
+    function roundTo(x) { return parseFloat(x.toFixed(8)); }
+
+    // 事件监听器
+    longBtn.addEventListener('click', () => setSide('long'));
+    shortBtn.addEventListener('click', () => setSide('short'));
+
+    priceInput.addEventListener('input', () => {
+      calculate();
+      updateButtonState();
+    });
+
+    // 监听参数输入变化
+    [tpInput, slInput, budgetInput].forEach(input => {
+      input.addEventListener('input', () => {
+        isParamsModified = checkParamsModified();
+        updateButtonState();
+        updateStatusBadge();
+      });
+    });
+
+    applyBtn.addEventListener('click', () => {
+      if (applyBtn.classList.contains('btn-disabled')) return;
+      
+      const price = parseFloat(priceInput.value);
+      if (!isFinite(price) || price <= 0) {
+        alert('请输入有效的当前价格');
+        return;
+      }
+      
+      calculate();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      priceInput.value = '';
+      resultArea.style.display = 'none';
+      setSide('long'); // 重置时回到多单模式
+    });
+
+    // 初始化
     setSide('long');
     updatePercentDisplays();
   </script>
