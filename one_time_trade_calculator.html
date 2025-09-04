@@ -426,6 +426,8 @@
       const price = parseFloat(priceInput.value);
       if (isFinite(price) && price > 0 && checkParamsDefault()) {
         calculate();
+        // 计算后更新按钮状态
+        updateButtonState();
       }
     }
 
@@ -440,10 +442,11 @@
       updateStatusBadge();
       validateTPAndSL();
       
-      // 只有在参数全部回到默认状态时才自动计算
-      if (checkParamsDefault() && parseFloat(priceInput.value) > 0) {
-        calculate();
-      }
+      // 尝试自动计算（如果参数回到默认状态）
+      tryAutoCalculate();
+      
+      // 更新按钮状态
+      updateButtonState();
     }
 
     // 事件监听器
