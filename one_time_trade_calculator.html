@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <!-- Written by ChatGPT GPT-5 Free on Thursday, 4 September 2025 -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>止盈止损计算器</title>
+  <style>
+    :root {
+      --green-bg: #dcfce7; /* 淡绿色背景 */
+      --red-bg: #fee2e2;   /* 淡红色背景 */
+      --neutral-bg: #f8fafc;
+      --accent:#2563eb;
+      --muted:#475569;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      padding: 24px;
+      background: var(--neutral-bg);
+      color: #111827;
+      transition: background 0.3s ease;
+    }
+    h1 { margin: 0 0 16px; font-size: 22px; text-align: center; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; }
+    input[type=number] {
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1);
+      background: #fff; color: #111827; font-size: 15px;
+    }
+    .row { display: flex; gap: 12px; margin-bottom: 12px; }
+    .col { flex: 1; }
+    .btn { display: inline-block; padding: 12px 18px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 15px; }
+    .btn-select { flex: 1; text-align: center; }
+    .btn-long { background: #22c55e; color: white; }
+    .btn-short { background: #ef4444; color: white; }
+    .btn-secondary { background: transparent; border: 1px solid rgba(0,0,0,0.2); color: var(--muted); }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    .result { margin-top: 20px; padding: 16px; border-radius: 10px; background: #fff; color: #111827; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .note { font-size: 13px; color: #b45309; margin-top: 8px; }
+    .small { font-size: 13px; color: var(--muted); }
+    .badge { display:inline-block; padding:6px 8px; border-radius:8px; background:rgba(0,0,0,0.05); font-size:13px; color:#111827 }
+  </style>
+</head>
+<body>
+  <h1>止盈止损计算器</h1>
+
+  <div>
+    <label>当前价格</label>
+    <input id="price" type="number" step="0.0001" placeholder="输入当前价格" />
+  </div>
+
+  <div class="row" style="margin-top:12px;">
+    <button id="longBtn" class="btn btn-select btn-long">多单</button>
+    <button id="shortBtn" class="btn btn-select btn-short">空单</button>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <label>止盈百分比</label>
+      <input id="tpPercent" type="number" step="0.0001" />
+      <div class="small">默认：多单 1，空单 -1</div>
+    </div>
+    <div class="col">
+      <label>止损百分比</label>
+      <input id="slPercent" type="number" step="0.0001" />
+      <div class="small">默认：多单 -0.4，空单 0.4</div>
+    </div>
+  </div>
+
+  <div>
+    <label>预算 (默认 10000)</label>
+    <input id="budget" type="number" step="0.01" />
+  </div>
+
+  <div class="flex-between">
+    <div>
+      <button id="applyBtn" class="btn" style="background:var(--accent);color:#fff">计算</button>
+      <button id="resetBtn" class="btn btn-secondary">重置</button>
+    </div>
+    <div class="badge" id="statusBadge">一次性设置未使用</div>
+  </div>
+
+  <div class="result" id="resultArea" style="display:none;">
+    <div id="resultText"></div>
+    <div class="note" id="noteArea" style="display:none;"></div>
+  </div>
+
+  <script>
+    const DEFAULTS = {
+      long: { tp: 1.0, sl: -0.4 },
+      short: { tp: -1.0, sl: 0.4 }
+    };
+    const DEFAULT_BUDGET = 10000;
+
+    let oneTimeCustom = null;
+    let side = 'long';
+
+    const priceInput = document.getElementById('price');
+    const tpInput = document.getElementById('tpPercent');
+    const slInput = document.getElementById('slPercent');
+    const budgetInput = document.getElementById('budget');
+    const applyBtn = document.getElementById('applyBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const resultArea = document.getElementById('resultArea');
+    const resultText = document.getElementById('resultText');
+    const noteArea = document.getElementById('noteArea');
+    const longBtn = document.getElementById('longBtn');
+    const shortBtn = document.getElementById('shortBtn');
+
+    function updatePercentDisplays() {
+      const defaults = DEFAULTS[side];
+      tpInput.value = defaults.tp;
+      slInput.value = defaults.sl;
+      budgetInput.value = DEFAULT_BUDGET;
+    }
+
+    function setSide(s) {
+      side = s;
+      if (side === 'long') {
+        document.body.style.background = 'var(--green-bg)';
+      } else {
+        document.body.style.background = 'var(--red-bg)';
+      }
+      if (!oneTimeCustom) updatePercentDisplays();
+    }
+
+    longBtn.addEventListener('click', () => setSide('long'));
+    shortBtn.addEventListener('click', () => setSide('short'));
+
+    applyBtn.addEventListener('click', () => {
+      const price = parseFloat(priceInput.value);
+      if (!isFinite(price) || price <= 0) {
+        alert('请输入有效的当前价格');
+        return;
+      }
+
+      let tpPercent, slPercent, budget;
+
+      if (!oneTimeCustom) {
+        tpPercent = parseFloat(tpInput.value);
+        slPercent = parseFloat(slInput.value);
+        budget = parseFloat(budgetInput.value);
+        if (!isFinite(tpPercent) || !isFinite(slPercent) || !isFinite(budget)) {
+          alert('请输入有效的百分比和预算');
+          return;
+        }
+        oneTimeCustom = { tp: tpPercent, sl: slPercent, budget: budget };
+      }
+
+      tpPercent = oneTimeCustom.tp;
+      slPercent = oneTimeCustom.sl;
+      budget = oneTimeCustom.budget;
+
+      const rawTp = price * (1 + tpPercent / 100);
+      const rawSl = price * (1 + slPercent / 100);
+      const adjTp = adjustPrice(rawTp, side);
+      const adjSl = adjustPrice(rawSl, side);
+      const shares = Math.floor(budget / price);
+
+      resultArea.style.display = 'block';
+      resultText.innerHTML = '<div>方向：' + (side === 'long' ? '多单' : '空单') + '</div>'
+        + '<div>预算：' + budget.toFixed(2) + '</div>'
+        + '<div>可买股数：' + shares + '</div>'
+        + '<div style="margin-top:8px;font-weight:700">止盈价格：' + adjTp + ' (' + roundTo(rawTp) + ')</div>'
+        + '<div style="margin-top:6px;font-weight:700">止损价格：' + adjSl + ' (' + roundTo(rawSl) + ')</div>';
+
+      if (tpPercent !== DEFAULTS[side].tp || slPercent !== DEFAULTS[side].sl || budget !== DEFAULT_BUDGET) {
+        noteArea.style.display = 'block';
+        noteArea.textContent = '已使用一次性自定义参数，下次计算将恢复默认';
+        statusBadge.textContent = '一次性设置已使用并清除';
+      } else {
+        noteArea.style.display = 'none';
+        statusBadge.textContent = '使用默认参数';
+      }
+
+      oneTimeCustom = null;
+      updatePercentDisplays();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      oneTimeCustom = null;
+      updatePercentDisplays();
+      resultArea.style.display = 'none';
+      statusBadge.textContent = '一次性设置未使用';
+      document.body.style.background = 'var(--neutral-bg)';
+    });
+
+    function roundTo(x) { return parseFloat(x.toFixed(8)); }
+
+    function adjustPrice(raw, side) {
+      const factor = 100;
+      let val;
+      if (side === 'long') {
+        val = Math.ceil(raw * factor) / factor;
+      } else {
+        val = Math.floor(raw * factor) / factor;
+      }
+      return val.toFixed(2);
+    }
+
+    // 默认进入网站就是多单模式
+    setSide('long');
+    updatePercentDisplays();
+  </script>
+</body>
+</html>
