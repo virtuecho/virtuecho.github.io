@@ -200,6 +200,11 @@
             line-height: 1.5;
         }
         
+        .highlight-text {
+            color: red !important;
+            font-weight: bold;
+        }
+        
         .content-footer {
             display: flex;
             justify-content: space-between;
@@ -378,10 +383,11 @@
                     <option value="3">公司</option>
                     <option value="4">数据</option>
                     <option value="5">市场</option>
-					<option value="102">国际</option>
-					<option value="6">观点</option>
-					<option value="7">央行</option>
-					<option value="8">其他</option>
+                    <option value="102">国际</option>
+                    <option value="6">观点</option>
+                    <option value="7">央行</option>
+                    <option value="8">其他</option>
+                    <option value="9">焦点</option>
                 </select>
                 
                 <button class="refresh-btn" id="refreshBtn">
@@ -628,13 +634,17 @@
             const buttonClass = hasDocUrl ? 'action-btn' : 'action-btn disabled';
             const onClick = hasDocUrl ? `openDocUrl('${getDocUrl(item)}')` : '';
             
+            // 检查是否需要高亮（ID为9）
+            const isHighlight = item.tag.some(t => t.id == 9);
+            const textClass = isHighlight ? 'content-text highlight-text' : 'content-text';
+            
             return `
                 <div class="content-item" data-id="${item.id}">
                     <div class="content-header">
                         <span class="content-id">ID: ${item.id}</span>
                         <span class="content-time">${formatTime(item.create_time)}</span>
                     </div>
-                    <div class="content-text">
+                    <div class="${textClass}">
                         ${item.rich_text}
                     </div>
                     <div class="content-footer">
