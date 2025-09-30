@@ -1,3 +1,63 @@
+# 期权策略分级表
+
+## 一级（最基础，风险有限）
+| 中文名称 | 英文名称 | 一句话解释 | 举例 | 风险 |
+|----------|----------|------------|------|------|
+| 持保看涨 | Covered Call | 持有股票并卖出对应Call，赚取权利金 | 买100股AAPL + 卖1张AAPL 200 Call | 部分有限风险（下跌无限，下行风险来自股票） |
+| 持保篮子看涨 | Covered Call on Portfolio | 基于ETF或组合做Covered Call | 买SPY ETF + 卖SPY Call | 部分有限风险 |
+| 买股卖权 | Buy-Write | 买股票同时写出Call（等同Covered Call） | 买100股MSFT + 卖1张Call | 部分有限风险 |
+
+---
+
+## 二级（包含一级 + 期权买入策略）
+| 中文名称 | 英文名称 | 一句话解释 | 举例 | 风险 |
+|----------|----------|------------|------|------|
+| 买入看涨 | Long Call | 直接买Call，赌股价上涨 | 买AAPL 200 Call | 有限风险（最大亏损=权利金） |
+| 买入看跌 | Long Put | 直接买Put，赌股价下跌 | 买AAPL 180 Put | 有限风险 |
+| 备兑看跌 | Cash-Secured Put | 卖Put并准备现金买入标的 | 卖AAPL 180 Put，备足现金 | 有限风险（最大亏损=买入成本-权利金） |
+| 保护性看涨 | Protective Call | 空头仓位买Call保护 | 卖空100股AAPL + 买200 Call | 有限风险 |
+| 保护性看跌 | Protective Put | 多头仓位买Put保护 | 买100股AAPL + 买180 Put | 有限风险 |
+| 买入跨式 | Long Straddle | 同价同期限买Call+Put，赌大波动 | 买AAPL 200 Call + 200 Put | 有限风险（最大亏损=总权利金） |
+| 买入宽跨式 | Long Strangle | 不同行权价买Call+Put，赌大波动 | 买AAPL 210 Call + 190 Put | 有限风险 |
+| 转换 | Conversion | 股票+期权组合锁定套利 | 买股票+买Put+卖Call | 有限风险（接近套利） |
+| 买入看涨价差 | Bull Call Spread | 买低行权Call，卖高行权Call | 买190 Call，卖200 Call | 有限风险 |
+| 买入看跌价差 | Bear Put Spread | 买高行权Put，卖低行权Put | 买200 Put，卖190 Put | 有限风险 |
+
+---
+
+## 三级（包含一二级 + 卖出有限风险策略）
+| 中文名称 | 英文名称 | 一句话解释 | 举例 | 风险 |
+|----------|----------|------------|------|------|
+| 卖出看跌 | Short Put | 卖Put，赌股价不大跌 | 卖AAPL 180 Put | 无限风险（股价归零） |
+| 卖出看跌价差 | Short Put Spread | 卖Put并买更低Put，限制风险 | 卖190 Put，买180 Put | 有限风险 |
+| 卖出蝶式 | Short Butterfly Spread | 卖蝶式组合，赌股价不在中间 | 卖190/200/210蝶式 | 有限风险 |
+| 合成 | Synthetic Position | 用期权模拟股票仓位 | Long Call + Short Put ≈ 多头股票 | 部分无限风险（取决于方向） |
+| 卖出铁鹰式 | Short Iron Condor | 卖区间组合，赌股价维持区间 | 卖190 Put、买180 Put、卖210 Call、买220 Call | 有限风险 |
+| 买入日历价差 | Long Calendar Spread | 买远期卖近期期权，赌波动上升 | 买200 Call(6月)，卖200 Call(4月) | 有限风险 |
+| 逆转 | Reverse Conversion | 反向组合套利 | 卖股票+买Call+卖Put | 部分有限风险 |
+| 买入蝶式 | Long Butterfly Spread | 用3行权价构建，赌收敛 | 买190 Call，卖2×200 Call，买210 Call | 有限风险 |
+| 对角线价差 | Diagonal Spread | 不同到期+不同行权价组合 | 买200 Call(6月)，卖210 Call(4月) | 有限风险 |
+| 卖出看涨价差 | Short Call Spread | 卖低Call，买高Call，赌不上涨 | 卖200 Call，买210 Call | 有限风险 |
+| 非平衡蝶式 | Broken-Wing Butterfly | 调整蝶式倾斜风险 | 买190 Call，卖2×200 Call，买215 Call | 有限风险 |
+
+---
+
+## 四级（最高，含裸卖期权，无限风险）
+| 中文名称 | 英文名称 | 一句话解释 | 举例 | 风险 |
+|----------|----------|------------|------|------|
+| 卖出裸看涨 | Naked Call | 无持股卖Call，风险无限 | 卖200 Call，无股票支撑 | 无限风险（股价无限上涨） |
+| 卖出跨式 | Short Straddle | 卖同价Call+Put，赌股价稳定 | 卖200 Call + 卖200 Put | 无限风险 |
+| 卖出宽跨式 | Short Strangle | 卖不同行权Call+Put，赌区间震荡 | 卖210 Call + 卖190 Put | 无限风险 |
+| 卖出合成 | Synthetic Short | 用期权模拟空头 | Short Call + Long Put | 部分无限风险 |
+| 买入铁鹰式 | Long Iron Condor | 买保护版铁鹰，风险有限 | 买180 Put、卖190 Put、卖210 Call、买220 Call | 有限风险 |
+| 买入盒式价差 | Long Box Spread | 套利结构，锁定利率 | Bull Call Spread + Bear Put Spread | 有限风险 |
+| 领式 | Collar | 股票+买Put+卖Call保护 | 买100股，买180 Put，卖210 Call | 有限风险 |
+| 卖出领式 | Short Collar | 反向领式，风险更大 | 卖100股，卖180 Put，买210 Call | 部分无限风险 |
+| 卖出日历价差 | Short Calendar Spread | 卖远期买近期，赌波动下降 | 卖200 Call(6月)，买200 Call(4月) | 无限风险 |
+| 对角线价差（买入边先到期） | Diagonal Spread (Near Leg Long) | 特殊Diagonal，博弈时间/价差 | 买近月Call，卖远月不同价Call | 有限风险 |
+
+---
+
 # 1. The purchase of an American Style option contract is 购买美式期权合约是:
 - A contract which does not require payment until expiration of the contract.
   - ❌ 购买期权时，权利金是立即支付的，不是到期才付。
