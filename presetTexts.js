@@ -3,8 +3,8 @@
 // @namespace    http://tampermonkey.net/
 // @version      2025-10-01-4.0
 // @description  在输入框中填充预设文本，避免TrustedHTML错误
-// @updateURL    https://raw.githubusercontent.com/
-// @downloadURL  https://raw.githubusercontent.com/
+// @updateURL    https://github.com/virtuecho/virtuecho.github.io/blob/03a5b1212bc4b987fc70b9ed7a0254fb042bf607/presetTexts.js
+// @downloadURL  https://github.com/virtuecho/virtuecho.github.io/blob/03a5b1212bc4b987fc70b9ed7a0254fb042bf607/presetTexts.js
 // @author       Your Name
 // @match        https://chat.deepseek.com/*
 // @match        https://gemini.google.com/*
