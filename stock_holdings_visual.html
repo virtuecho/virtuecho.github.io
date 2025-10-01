@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>股票持仓可视化工具</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sunburst@4"></script>
     <style>
         * {
             margin: 0;
@@ -30,18 +31,18 @@
         
         header {
             text-align: center;
-            padding: 20px 0;
+            padding: 30px 0;
             color: white;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         h1 {
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             margin-bottom: 10px;
         }
         
         .subtitle {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             opacity: 0.9;
         }
         
@@ -58,10 +59,8 @@
             min-width: 300px;
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-height: 90vh;
-            overflow-y: auto;
         }
         
         .chart-section {
@@ -69,35 +68,34 @@
             min-width: 300px;
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             display: flex;
             flex-direction: column;
-            height: 80vh;
         }
         
         .section-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
             color: #1a2a6c;
             border-bottom: 2px solid #fdbb2d;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
         }
         
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: #555;
         }
         
         input, select, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
@@ -113,7 +111,7 @@
             background: linear-gradient(to right, #1a2a6c, #b21f1f);
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
@@ -121,7 +119,7 @@
             transition: transform 0.2s, box-shadow 0.2s;
             display: block;
             width: 100%;
-            margin-top: 8px;
+            margin-top: 10px;
         }
         
         .btn:hover {
@@ -142,18 +140,18 @@
         }
         
         .holdings-list {
-            margin-top: 15px;
-            max-height: 200px;
+            margin-top: 20px;
+            max-height: 300px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 8px;
-            padding: 8px;
+            padding: 10px;
         }
         
         .holding-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
             align-items: center;
         }
@@ -185,15 +183,14 @@
             background: #6c757d;
             color: white;
             border: none;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
         }
         
         .edit-btn {
@@ -206,23 +203,22 @@
         
         .chart-container {
             flex: 1;
-            min-height: 400px;
+            min-height: 500px;
             position: relative;
-            height: 100%;
         }
         
         .summary {
-            margin-top: 15px;
-            padding: 12px;
+            margin-top: 20px;
+            padding: 15px;
             background: #f8f9fa;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
         
         .summary-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         
         .summary-value {
@@ -232,28 +228,28 @@
         
         .no-data {
             text-align: center;
-            padding: 40px 0;
+            padding: 50px 0;
             color: #777;
             font-style: italic;
         }
         
         .group-section {
-            margin-top: 25px;
+            margin-top: 30px;
         }
         
         .group-list {
-            margin-top: 8px;
-            max-height: 180px;
+            margin-top: 10px;
+            max-height: 200px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 8px;
-            padding: 8px;
+            padding: 10px;
         }
         
         .group-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px;
+            padding: 10px;
             border-bottom: 1px solid #eee;
             align-items: center;
         }
@@ -268,66 +264,14 @@
         }
         
         .group-stocks {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #666;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 450px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .modal-title {
-            font-size: 1.4rem;
-            color: #1a2a6c;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #777;
-        }
-        
-        .modal-footer {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        
-        .modal-btn {
-            flex: 1;
         }
         
         .view-toggle {
             display: flex;
-            margin-bottom: 12px;
-            gap: 8px;
+            margin-bottom: 15px;
+            gap: 10px;
         }
         
         .toggle-btn {
@@ -338,7 +282,6 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 0.9rem;
         }
         
         .toggle-btn.active {
@@ -346,34 +289,12 @@
             color: white;
         }
         
-        .data-io-section {
-            margin-top: 15px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .data-textarea {
-            height: 120px;
-            margin-bottom: 8px;
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-        
-        .group-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        
         footer {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
             color: white;
-            padding: 15px;
-            font-size: 0.85rem;
+            padding: 20px;
+            font-size: 0.9rem;
             opacity: 0.8;
         }
         
@@ -383,25 +304,7 @@
             }
             
             h1 {
-                font-size: 1.8rem;
-            }
-            
-            .chart-section {
-                height: 60vh;
-            }
-            
-            .input-section {
-                max-height: none;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .view-toggle {
-                flex-direction: column;
-            }
-            
-            .chart-section {
-                height: 50vh;
+                font-size: 2rem;
             }
         }
     </style>
@@ -418,7 +321,7 @@
                 <h2 class="section-title">添加持仓</h2>
                 <div class="form-group">
                     <label for="stockSymbol">股票名称/代码</label>
-                    <input type="text" id="stockSymbol" placeholder="例如：AAPL 或 苹果公司" required>
+                    <input type="text" id="stockSymbol" placeholder="例如：AAPL" required>
                 </div>
                 
                 <div class="form-group">
@@ -429,7 +332,7 @@
                 <button id="addBtn" class="btn">添加持仓</button>
                 <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
                 
-                <h2 class="section-title" style="margin-top: 25px;">我的持仓</h2>
+                <h2 class="section-title" style="margin-top: 30px;">我的持仓</h2>
                 <div class="holdings-list" id="holdingsList">
                     <!-- 持仓列表将通过JS动态生成 -->
                 </div>
@@ -442,11 +345,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="parentGroup">父分组</label>
-                        <select id="parentGroup">
-                            <option value="">无（顶级分组）</option>
-                            <!-- 分组选项将通过JS动态生成 -->
-                        </select>
+                        <label for="groupColor">分组颜色</label>
+                        <input type="color" id="groupColor" value="#1a2a6c">
                     </div>
                     
                     <div class="form-group">
@@ -461,21 +361,6 @@
                     <h2 class="section-title" style="margin-top: 20px;">我的分组</h2>
                     <div class="group-list" id="groupList">
                         <!-- 分组列表将通过JS动态生成 -->
-                    </div>
-                </div>
-                
-                <div class="data-io-section">
-                    <h2 class="section-title">数据导入导出</h2>
-                    <div class="form-group">
-                        <label for="exportData">导出数据</label>
-                        <textarea id="exportData" class="data-textarea" readonly></textarea>
-                        <button id="copyDataBtn" class="btn btn-success">复制数据</button>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="importData">导入数据</label>
-                        <textarea id="importData" class="data-textarea" placeholder="粘贴导出的数据"></textarea>
-                        <button id="importBtn" class="btn btn-info">导入数据</button>
                     </div>
                 </div>
             </div>
@@ -509,59 +394,6 @@
             </div>
         </div>
         
-        <!-- 编辑持仓模态框 -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">编辑持仓</h3>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="form-group">
-                    <label for="editSymbol">股票名称/代码</label>
-                    <input type="text" id="editSymbol" required>
-                </div>
-                <div class="form-group">
-                    <label for="editValue">持仓市值 (USD)</label>
-                    <input type="number" id="editValue" step="0.01" min="0.01" required>
-                </div>
-                <div class="modal-footer">
-                    <button id="saveEditBtn" class="btn modal-btn">保存修改</button>
-                    <button id="cancelEditBtn" class="btn btn-secondary modal-btn">取消</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 编辑分组模态框 -->
-        <div id="editGroupModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">编辑分组</h3>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="form-group">
-                    <label for="editGroupName">分组名称</label>
-                    <input type="text" id="editGroupName" required>
-                </div>
-                <div class="form-group">
-                    <label for="editParentGroup">父分组</label>
-                    <select id="editParentGroup">
-                        <option value="">无（顶级分组）</option>
-                        <!-- 分组选项将通过JS动态生成 -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editGroupStocks">选择股票</label>
-                    <select id="editGroupStocks" multiple style="height: 200px;">
-                        <!-- 股票选项将通过JS动态生成 -->
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button id="saveGroupEditBtn" class="btn modal-btn">保存修改</button>
-                    <button id="cancelGroupEditBtn" class="btn btn-secondary modal-btn">取消</button>
-                </div>
-            </div>
-        </div>
-        
         <footer>
             <p>© 2023 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
         </footer>
@@ -573,8 +405,6 @@
         let groups = JSON.parse(localStorage.getItem('stockGroups')) || [];
         let pieChart = null;
         let currentView = 'stock'; // 'stock', 'group' 或 'double'
-        let editingIndex = -1; // 当前编辑的持仓索引
-        let editingGroupIndex = -1; // 当前编辑的分组索引
         
         // DOM元素
         const stockSymbolInput = document.getElementById('stockSymbol');
@@ -587,38 +417,21 @@
         const stockCountEl = document.getElementById('stockCount');
         const groupCountEl = document.getElementById('groupCount');
         const groupNameInput = document.getElementById('groupName');
-        const parentGroupSelect = document.getElementById('parentGroup');
+        const groupColorInput = document.getElementById('groupColor');
         const groupStocksSelect = document.getElementById('groupStocks');
         const addGroupBtn = document.getElementById('addGroupBtn');
         const groupList = document.getElementById('groupList');
-        const editModal = document.getElementById('editModal');
-        const editSymbolInput = document.getElementById('editSymbol');
-        const editValueInput = document.getElementById('editValue');
-        const saveEditBtn = document.getElementById('saveEditBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
         const stockViewBtn = document.getElementById('stockViewBtn');
         const groupViewBtn = document.getElementById('groupViewBtn');
         const doubleViewBtn = document.getElementById('doubleViewBtn');
-        const exportDataTextarea = document.getElementById('exportData');
-        const copyDataBtn = document.getElementById('copyDataBtn');
-        const importDataTextarea = document.getElementById('importData');
-        const importBtn = document.getElementById('importBtn');
-        const editGroupModal = document.getElementById('editGroupModal');
-        const editGroupNameInput = document.getElementById('editGroupName');
-        const editParentGroupSelect = document.getElementById('editParentGroup');
-        const editGroupStocksSelect = document.getElementById('editGroupStocks');
-        const saveGroupEditBtn = document.getElementById('saveGroupEditBtn');
-        const cancelGroupEditBtn = document.getElementById('cancelGroupEditBtn');
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             renderHoldingsList();
             renderGroupList();
             updateGroupStocksSelect();
-            updateParentGroupSelect();
             updateChart();
             updateSummary();
-            updateExportData();
             
             // 设置视图切换按钮事件
             stockViewBtn.addEventListener('click', function() {
@@ -638,44 +451,6 @@
                 updateActiveViewButtons();
                 updateChart();
             });
-            
-            // 数据导出按钮
-            copyDataBtn.addEventListener('click', function() {
-                exportDataTextarea.select();
-                document.execCommand('copy');
-                alert('数据已复制到剪贴板');
-            });
-            
-            // 数据导入按钮
-            importBtn.addEventListener('click', function() {
-                const data = importDataTextarea.value.trim();
-                if (!data) {
-                    alert('请粘贴导出的数据');
-                    return;
-                }
-                
-                try {
-                    const parsedData = JSON.parse(data);
-                    holdings = parsedData.holdings || [];
-                    groups = parsedData.groups || [];
-                    
-                    saveHoldings();
-                    saveGroups();
-                    
-                    renderHoldingsList();
-                    renderGroupList();
-                    updateGroupStocksSelect();
-                    updateParentGroupSelect();
-                    updateChart();
-                    updateSummary();
-                    updateExportData();
-                    
-                    alert('数据导入成功！');
-                } catch (e) {
-                    alert('数据格式错误，请检查导入的数据');
-                    console.error(e);
-                }
-            });
         });
         
         // 更新活动视图按钮样式
@@ -687,7 +462,7 @@
         
         // 添加持仓
         addBtn.addEventListener('click', function() {
-            const symbol = stockSymbolInput.value.trim();
+            const symbol = stockSymbolInput.value.trim().toUpperCase();
             const value = parseFloat(valueInput.value);
             
             if (!symbol || isNaN(value) || value <= 0) {
@@ -716,7 +491,6 @@
             updateGroupStocksSelect();
             updateChart();
             updateSummary();
-            updateExportData();
             
             // 清空表单
             stockSymbolInput.value = '';
@@ -734,17 +508,15 @@
                 renderHoldingsList();
                 renderGroupList();
                 updateGroupStocksSelect();
-                updateParentGroupSelect();
                 updateChart();
                 updateSummary();
-                updateExportData();
             }
         });
         
         // 添加分组
         addGroupBtn.addEventListener('click', function() {
             const name = groupNameInput.value.trim();
-            const parent = parentGroupSelect.value;
+            const color = groupColorInput.value;
             const selectedStocks = Array.from(groupStocksSelect.selectedOptions).map(option => option.value);
             
             if (!name) {
@@ -758,14 +530,10 @@
                 return;
             }
             
-            // 自动生成颜色
-            const color = generateGroupColor(groups.length);
-            
             // 添加新分组
             groups.push({
                 id: generateId(),
                 name,
-                parent,
                 color,
                 stocks: selectedStocks
             });
@@ -775,26 +543,18 @@
             
             // 更新UI
             renderGroupList();
-            updateParentGroupSelect();
             updateChart();
             updateSummary();
-            updateExportData();
             
             // 清空表单
             groupNameInput.value = '';
-            parentGroupSelect.value = '';
+            groupColorInput.value = '#1a2a6c';
             groupStocksSelect.selectedIndex = -1;
         });
         
         // 生成唯一ID
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-        
-        // 生成分组颜色
-        function generateGroupColor(index) {
-            const hue = (index * 137.5) % 360; // 使用黄金角确保颜色分布均匀
-            return `hsl(${hue}, 70%, 60%)`;
         }
         
         // 保存持仓到localStorage
@@ -842,7 +602,6 @@
                     updateGroupStocksSelect();
                     updateChart();
                     updateSummary();
-                    updateExportData();
                 });
             });
             
@@ -864,76 +623,46 @@
                 return;
             }
             
-            // 先渲染顶级分组
-            groups.filter(group => !group.parent).forEach(group => {
-                renderGroupItem(group);
+            groups.forEach((group, index) => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'group-item';
                 
-                // 渲染子分组
-                groups.filter(subGroup => subGroup.parent === group.id).forEach(subGroup => {
-                    renderGroupItem(subGroup, true);
-                });
+                // 获取分组中的股票名称
+                const stockNames = group.stocks.map(symbol => {
+                    const holding = holdings.find(h => h.symbol === symbol);
+                    return holding ? holding.symbol : symbol;
+                }).join(', ');
+                
+                groupEl.innerHTML = `
+                    <div>
+                        <div class="group-name" style="color: ${group.color}">${group.name}</div>
+                        <div class="group-stocks">${stockNames}</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn edit-btn" data-index="${index}">✏️</button>
+                        <button class="action-btn delete-btn" data-index="${index}">×</button>
+                    </div>
+                `;
+                groupList.appendChild(groupEl);
             });
             
-            // 添加事件监听器
-            addGroupEventListeners();
-        }
-        
-        // 渲染单个分组项
-        function renderGroupItem(group, isChild = false) {
-            const groupEl = document.createElement('div');
-            groupEl.className = 'group-item';
-            groupEl.style.marginLeft = isChild ? '20px' : '0';
-            
-            // 获取分组中的股票名称
-            const stockNames = group.stocks.map(symbol => {
-                const holding = holdings.find(h => h.symbol === symbol);
-                return holding ? holding.symbol : symbol;
-            }).join(', ');
-            
-            groupEl.innerHTML = `
-                <div>
-                    <div class="group-name">
-                        <span class="group-indicator" style="background-color: ${group.color}"></span>
-                        ${group.name} ${isChild ? '(子分组)' : ''}
-                    </div>
-                    <div class="group-stocks">${stockNames}</div>
-                </div>
-                <div class="action-buttons">
-                    <button class="action-btn edit-btn" data-id="${group.id}">✏️</button>
-                    <button class="action-btn delete-btn" data-id="${group.id}">×</button>
-                </div>
-            `;
-            groupList.appendChild(groupEl);
-        }
-        
-        // 添加分组事件监听器
-        function addGroupEventListeners() {
             // 添加删除事件监听器
-            document.querySelectorAll('.group-item .delete-btn').forEach(btn => {
+            document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const groupId = this.getAttribute('data-id');
-                    if (confirm('确定要删除这个分组吗？')) {
-                        // 删除分组
-                        groups = groups.filter(group => group.id !== groupId);
-                        
-                        // 删除所有子分组
-                        groups = groups.filter(group => group.parent !== groupId);
-                        
-                        saveGroups();
-                        renderGroupList();
-                        updateParentGroupSelect();
-                        updateChart();
-                        updateSummary();
-                        updateExportData();
-                    }
+                    const index = parseInt(this.getAttribute('data-index'));
+                    groups.splice(index, 1);
+                    saveGroups();
+                    renderGroupList();
+                    updateChart();
+                    updateSummary();
                 });
             });
             
             // 添加编辑事件监听器
-            document.querySelectorAll('.group-item .edit-btn').forEach(btn => {
+            document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const groupId = this.getAttribute('data-id');
-                    openEditGroupModal(groupId);
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditGroupModal(index);
                 });
             });
         }
@@ -941,155 +670,73 @@
         // 更新分组选择框中的股票选项
         function updateGroupStocksSelect() {
             groupStocksSelect.innerHTML = '';
-            editGroupStocksSelect.innerHTML = '';
             
             holdings.forEach(holding => {
                 const option = document.createElement('option');
                 option.value = holding.symbol;
-                option.textContent = holding.symbol;
-                groupStocksSelect.appendChild(option.cloneNode(true));
-                editGroupStocksSelect.appendChild(option);
-            });
-        }
-        
-        // 更新父分组选择框
-        function updateParentGroupSelect() {
-            parentGroupSelect.innerHTML = '<option value="">无（顶级分组）</option>';
-            editParentGroupSelect.innerHTML = '<option value="">无（顶级分组）</option>';
-            
-            groups.forEach(group => {
-                const option = document.createElement('option');
-                option.value = group.id;
-                option.textContent = group.name;
-                parentGroupSelect.appendChild(option.cloneNode(true));
-                editParentGroupSelect.appendChild(option);
+                option.textContent = `${holding.symbol} ($${holding.value.toFixed(2)})`;
+                groupStocksSelect.appendChild(option);
             });
         }
         
         // 打开编辑持仓模态框
         function openEditModal(index) {
-            editingIndex = index;
             const holding = holdings[index];
             
-            editSymbolInput.value = holding.symbol;
-            editValueInput.value = holding.value;
+            const symbol = prompt("修改股票代码:", holding.symbol);
+            const value = parseFloat(prompt("修改持仓市值:", holding.value));
             
-            editModal.style.display = 'flex';
-        }
-        
-        // 关闭编辑持仓模态框
-        function closeEditModal() {
-            editModal.style.display = 'none';
-            editingIndex = -1;
+            if (symbol && !isNaN(value) && value > 0) {
+                holding.symbol = symbol;
+                holding.value = value;
+                saveHoldings();
+                renderHoldingsList();
+                updateGroupStocksSelect();
+                renderGroupList();
+                updateChart();
+                updateSummary();
+            }
         }
         
         // 打开编辑分组模态框
-        function openEditGroupModal(groupId) {
-            editingGroupIndex = groups.findIndex(g => g.id === groupId);
-            if (editingGroupIndex === -1) return;
+        function openEditGroupModal(index) {
+            const group = groups[index];
             
-            const group = groups[editingGroupIndex];
+            const name = prompt("修改分组名称:", group.name);
+            if (!name) return;
             
-            editGroupNameInput.value = group.name;
-            editParentGroupSelect.value = group.parent || '';
+            const symbols = prompt("修改股票代码(用逗号分隔):", group.stocks.join(","));
+            if (symbols !== null) {
+                group.stocks = symbols.split(",").map(s => s.trim()).filter(s => s.length > 0);
+                group.name = name;
+                saveGroups();
+                renderGroupList();
+                updateChart();
+                updateSummary();
+            }
+        }
+        
+        // 计算分组价值
+        function calculateGroupValue(group) {
+            let value = 0;
             
-            // 设置选中的股票
-            Array.from(editGroupStocksSelect.options).forEach(option => {
-                option.selected = group.stocks.includes(option.value);
+            // 计算分组内股票的价值
+            group.stocks.forEach(symbol => {
+                const holding = holdings.find(h => h.symbol === symbol);
+                if (holding) {
+                    value += holding.value;
+                }
             });
             
-            editGroupModal.style.display = 'flex';
+            return value;
         }
         
-        // 关闭编辑分组模态框
-        function closeEditGroupModal() {
-            editGroupModal.style.display = 'none';
-            editingGroupIndex = -1;
+        // 获取未分组的股票
+        function getUngroupedStocks() {
+            return holdings.filter(holding => {
+                return !groups.some(group => group.stocks.includes(holding.symbol));
+            });
         }
-        
-        // 保存持仓编辑
-        saveEditBtn.addEventListener('click', function() {
-            const symbol = editSymbolInput.value.trim();
-            const value = parseFloat(editValueInput.value);
-            
-            if (!symbol || isNaN(value) || value <= 0) {
-                alert('请填写所有字段并确保数值有效');
-                return;
-            }
-            
-            // 更新持仓数据
-            holdings[editingIndex] = {
-                symbol,
-                value
-            };
-            
-            // 保存到localStorage
-            saveHoldings();
-            
-            // 更新UI
-            renderHoldingsList();
-            updateGroupStocksSelect();
-            renderGroupList();
-            updateChart();
-            updateSummary();
-            updateExportData();
-            
-            // 关闭模态框
-            closeEditModal();
-        });
-        
-        // 保存分组编辑
-        saveGroupEditBtn.addEventListener('click', function() {
-            const name = editGroupNameInput.value.trim();
-            const parent = editParentGroupSelect.value;
-            const selectedStocks = Array.from(editGroupStocksSelect.selectedOptions).map(option => option.value);
-            
-            if (!name) {
-                alert('请输入分组名称');
-                return;
-            }
-            
-            // 检查分组名称是否唯一（排除自身）
-            if (groups.some((group, index) => group.name === name && index !== editingGroupIndex)) {
-                alert('分组名称已存在');
-                return;
-            }
-            
-            // 更新分组数据
-            groups[editingGroupIndex] = {
-                ...groups[editingGroupIndex],
-                name,
-                parent,
-                stocks: selectedStocks
-            };
-            
-            // 保存到localStorage
-            saveGroups();
-            
-            // 更新UI
-            renderGroupList();
-            updateParentGroupSelect();
-            updateChart();
-            updateSummary();
-            updateExportData();
-            
-            // 关闭模态框
-            closeEditGroupModal();
-        });
-        
-        // 取消编辑
-        cancelEditBtn.addEventListener('click', closeEditModal);
-        cancelGroupEditBtn.addEventListener('click', closeEditGroupModal);
-        
-        // 点击模态框外部关闭
-        window.addEventListener('click', function(event) {
-            if (event.target === editModal) {
-                closeEditModal();
-            }
-            if (event.target === editGroupModal) {
-                closeEditGroupModal();
-            }
-        });
         
         // 更新饼图
         function updateChart() {
@@ -1102,7 +749,7 @@
             if (holdings.length === 0) {
                 // 没有数据时显示提示
                 ctx.fillStyle = '#777';
-                ctx.font = '18px Arial';
+                ctx.font = '20px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText('暂无持仓数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
                 return;
@@ -1132,21 +779,29 @@
             } 
             else if (currentView === 'group') {
                 // 按分组显示
-                if (groups.length === 0) {
-                    ctx.fillStyle = '#777';
-                    ctx.font = '18px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('暂无分组数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
-                    return;
-                }
+                const ungroupedStocks = getUngroupedStocks();
                 
-                // 只显示顶级分组
-                const topLevelGroups = groups.filter(group => !group.parent);
-                labels = topLevelGroups.map(g => g.name);
-                const values = topLevelGroups.map(group => {
-                    return calculateGroupValue(group);
+                // 准备标签和数据
+                labels = [];
+                const values = [];
+                const backgroundColors = [];
+                
+                // 添加分组数据
+                groups.forEach(group => {
+                    const groupValue = calculateGroupValue(group);
+                    if (groupValue > 0) {
+                        labels.push(group.name);
+                        values.push(groupValue);
+                        backgroundColors.push(group.color);
+                    }
                 });
-                const backgroundColors = topLevelGroups.map(g => g.color);
+                
+                // 添加未分组股票（每个股票单独显示）
+                ungroupedStocks.forEach(stock => {
+                    labels.push(stock.symbol);
+                    values.push(stock.value);
+                    backgroundColors.push('#cccccc');
+                });
                 
                 pieChart = new Chart(ctx, {
                     type: 'pie',
@@ -1166,19 +821,22 @@
                 // 准备旭日图数据
                 const sunburstData = prepareSunburstData();
                 
-                if (sunburstData.labels.length === 0) {
+                if (sunburstData.children.length === 0) {
                     ctx.fillStyle = '#777';
-                    ctx.font = '18px Arial';
+                    ctx.font = '20px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText('暂无有效数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
                     return;
                 }
                 
                 pieChart = new Chart(ctx, {
-                    type: 'pie',
+                    type: 'sunburst',
                     data: {
-                        labels: sunburstData.labels,
-                        datasets: sunburstData.datasets
+                        datasets: [{
+                            tree: sunburstData.children,
+                            key: 'value',
+                            groups: ['name']
+                        }]
                     },
                     options: getChartOptions('持仓旭日图', true)
                 });
@@ -1188,114 +846,48 @@
         // 准备旭日图数据
         function prepareSunburstData() {
             const result = {
-                labels: [],
-                datasets: []
+                children: []
             };
             
-            // 外层数据：顶级分组和未分组的股票
-            const outerData = [];
-            const outerColors = [];
-            const outerLabels = [];
-            
-            // 内层数据：子分组和股票
-            const innerData = [];
-            const innerColors = [];
-            const innerLabels = [];
-            
-            // 1. 处理顶级分组
-            const topLevelGroups = groups.filter(group => !group.parent);
-            topLevelGroups.forEach(group => {
+            // 1. 处理分组
+            groups.forEach(group => {
                 const groupValue = calculateGroupValue(group);
                 if (groupValue > 0) {
-                    outerData.push(groupValue);
-                    outerColors.push(group.color);
-                    outerLabels.push(group.name);
-                    
-                    // 处理分组内的股票和子分组
-                    const childGroups = groups.filter(g => g.parent === group.id);
-                    const groupStocks = group.stocks.filter(symbol => {
-                        return holdings.some(h => h.symbol === symbol);
-                    });
+                    const groupNode = {
+                        name: group.name,
+                        value: groupValue,
+                        color: group.color,
+                        children: []
+                    };
                     
                     // 添加分组内的股票
-                    groupStocks.forEach(symbol => {
+                    group.stocks.forEach(symbol => {
                         const holding = holdings.find(h => h.symbol === symbol);
                         if (holding) {
-                            const value = holding.value;
-                            innerData.push(value);
-                            innerColors.push(lightenColor(group.color, 30));
-                            innerLabels.push(holding.symbol);
+                            groupNode.children.push({
+                                name: holding.symbol,
+                                value: holding.value,
+                                color: lightenColor(group.color, 30)
+                            });
                         }
                     });
                     
-                    // 添加子分组
-                    childGroups.forEach(childGroup => {
-                        const childValue = calculateGroupValue(childGroup);
-                        if (childValue > 0) {
-                            innerData.push(childValue);
-                            innerColors.push(childGroup.color);
-                            innerLabels.push(childGroup.name);
-                        }
-                    });
+                    result.children.push(groupNode);
                 }
             });
             
             // 2. 处理未分组的股票
-            const ungroupedStocks = holdings.filter(holding => {
-                return !groups.some(group => group.stocks.includes(holding.symbol));
-            });
+            const ungroupedStocks = getUngroupedStocks();
             
-            ungroupedStocks.forEach(holding => {
-                const value = holding.value;
-                outerData.push(value);
-                outerColors.push('#cccccc');
-                outerLabels.push(holding.symbol);
-                
-                // 内层数据为空（只有一层）
-                innerData.push(0);
-                innerColors.push('#dddddd');
-                innerLabels.push('');
+            ungroupedStocks.forEach(stock => {
+                result.children.push({
+                    name: stock.symbol,
+                    value: stock.value,
+                    color: '#cccccc'
+                });
             });
-            
-            // 设置结果
-            result.labels = [...outerLabels, ...innerLabels];
-            result.datasets = [
-                {
-                    label: '外层',
-                    data: outerData,
-                    backgroundColor: outerColors,
-                    borderWidth: 1
-                },
-                {
-                    label: '内层',
-                    data: innerData,
-                    backgroundColor: innerColors,
-                    borderWidth: 1
-                }
-            ];
             
             return result;
-        }
-        
-        // 计算分组价值
-        function calculateGroupValue(group) {
-            let value = 0;
-            
-            // 计算分组内股票的价值
-            group.stocks.forEach(symbol => {
-                const holding = holdings.find(h => h.symbol === symbol);
-                if (holding) {
-                    value += holding.value;
-                }
-            });
-            
-            // 计算子分组的价值
-            const childGroups = groups.filter(g => g.parent === group.id);
-            childGroups.forEach(childGroup => {
-                value += calculateGroupValue(childGroup);
-            });
-            
-            return value;
         }
         
         // 获取图表配置选项
@@ -1323,18 +915,16 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const value = context.parsed;
-                                const total = context.chart.data.datasets.reduce((sum, dataset) => {
-                                    return sum + dataset.data.reduce((a, b) => a + b, 0);
+                                const value = context.raw.value || context.raw;
+                                const total = context.chart.data.datasets[0].data.reduce((sum, dataset) => {
+                                    return sum + dataset.reduce((a, b) => a + b, 0);
                                 }, 0);
                                 const percentage = Math.round((value / total) * 100);
                                 return `${context.label}: $${value.toFixed(2)} (${percentage}%)`;
                             }
                         }
                     }
-                },
-                // 旭日图配置
-                cutout: isSunburst ? '30%' : '0%'
+                }
             };
         }
         
@@ -1392,15 +982,6 @@
             totalValueEl.textContent = `$${totalValue.toFixed(2)}`;
             stockCountEl.textContent = stockCount;
             groupCountEl.textContent = groupCount;
-        }
-        
-        // 更新导出数据
-        function updateExportData() {
-            const data = {
-                holdings: holdings,
-                groups: groups
-            };
-            exportDataTextarea.value = JSON.stringify(data, null, 2);
         }
     </script>
 </body>
