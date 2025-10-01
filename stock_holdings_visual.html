@@ -21,13 +21,13 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
         header {
             text-align: center;
-            padding: 30px 0;
+            padding: 20px 0;
             color: white;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
@@ -51,17 +51,20 @@
         
         .input-section {
             flex: 1;
-            min-width: 300px;
-            background: white;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
         }
         
         .chart-section {
             flex: 2;
-            min-width: 300px;
-            background: white;
+            min-width: 600px;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -70,7 +73,7 @@
         }
         
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin-bottom: 20px;
             color: #1a2a6c;
             border-bottom: 2px solid #fdbb2d;
@@ -78,7 +81,7 @@
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         label {
@@ -88,16 +91,16 @@
             color: #555;
         }
         
-        input, select {
+        input, select, textarea {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
         }
         
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: #1a2a6c;
             outline: none;
         }
@@ -106,7 +109,7 @@
             background: linear-gradient(to right, #1a2a6c, #b21f1f);
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
@@ -114,7 +117,7 @@
             transition: transform 0.2s, box-shadow 0.2s;
             display: block;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         
         .btn:hover {
@@ -134,19 +137,23 @@
             background: linear-gradient(to right, #17a2b8, #138496);
         }
         
+        .btn-success {
+            background: linear-gradient(to right, #28a745, #218838);
+        }
+        
         .holdings-list {
-            margin-top: 20px;
-            max-height: 300px;
+            margin-top: 15px;
+            max-height: 200px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
         }
         
         .holding-item {
             display: flex;
             justify-content: space-between;
-            padding: 12px;
+            padding: 10px;
             border-bottom: 1px solid #eee;
             align-items: center;
         }
@@ -186,6 +193,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.9rem;
         }
         
         .edit-btn {
@@ -198,22 +206,22 @@
         
         .chart-container {
             flex: 1;
-            min-height: 500px;
+            min-height: 400px;
             position: relative;
         }
         
         .summary {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 15px;
+            padding: 12px;
             background: #f8f9fa;
             border-radius: 8px;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
         
         .summary-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .summary-value {
@@ -223,28 +231,28 @@
         
         .no-data {
             text-align: center;
-            padding: 50px 0;
+            padding: 40px 0;
             color: #777;
             font-style: italic;
         }
         
         .group-section {
-            margin-top: 30px;
+            margin-top: 20px;
         }
         
         .group-list {
-            margin-top: 10px;
-            max-height: 200px;
+            margin-top: 8px;
+            max-height: 150px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
         }
         
         .group-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px;
+            padding: 8px;
             border-bottom: 1px solid #eee;
             align-items: center;
         }
@@ -259,8 +267,59 @@
         }
         
         .group-stocks {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #666;
+        }
+        
+        .color-group-section {
+            margin-top: 20px;
+        }
+        
+        .color-group-list {
+            margin-top: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .color-group-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .color-group-item:last-child {
+            border-bottom: none;
+        }
+        
+        .color-group-name {
+            font-weight: bold;
+        }
+        
+        .color-group-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .data-io-section {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .data-textarea {
+            height: 100px;
+            margin-bottom: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
         }
         
         .modal {
@@ -345,13 +404,59 @@
             opacity: 0.8;
         }
         
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #1a2a6c;
+            color: #1a2a6c;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .color-preview {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-left: 10px;
+            vertical-align: middle;
+            border: 1px solid #ddd;
+        }
+        
         @media (max-width: 768px) {
             .app-container {
                 flex-direction: column;
             }
             
+            .chart-section {
+                min-width: 100%;
+            }
+            
             h1 {
                 font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .view-toggle {
+                flex-direction: column;
             }
         }
     </style>
@@ -365,27 +470,36 @@
         
         <div class="app-container">
             <div class="input-section">
-                <h2 class="section-title">添加持仓</h2>
-                <div class="form-group">
-                    <label for="stockSymbol">股票名称/代码</label>
-                    <input type="text" id="stockSymbol" placeholder="例如：AAPL" required>
+                <div class="tabs">
+                    <div class="tab active" data-tab="holdings">持仓管理</div>
+                    <div class="tab" data-tab="groups">分组管理</div>
+                    <div class="tab" data-tab="color-groups">颜色分组</div>
+                    <div class="tab" data-tab="data-io">数据导入导出</div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="value">持仓市值 (USD)</label>
-                    <input type="number" id="value" placeholder="例如：15000.00" step="0.01" min="0.01" required>
+                <div class="tab-content active" id="holdings-tab">
+                    <h2 class="section-title">添加持仓</h2>
+                    <div class="form-group">
+                        <label for="stockSymbol">股票名称/代码</label>
+                        <input type="text" id="stockSymbol" placeholder="例如：AAPL" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="value">持仓市值 (USD)</label>
+                        <input type="number" id="value" placeholder="例如：15000.00" step="0.01" min="0.01" required>
+                    </div>
+                    
+                    <button id="addBtn" class="btn">添加持仓</button>
+                    <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
+                    
+                    <h2 class="section-title" style="margin-top: 20px;">我的持仓</h2>
+                    <div class="holdings-list" id="holdingsList">
+                        <!-- 持仓列表将通过JS动态生成 -->
+                    </div>
                 </div>
                 
-                <button id="addBtn" class="btn">添加持仓</button>
-                <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
-                
-                <h2 class="section-title" style="margin-top: 30px;">我的持仓</h2>
-                <div class="holdings-list" id="holdingsList">
-                    <!-- 持仓列表将通过JS动态生成 -->
-                </div>
-                
-                <div class="group-section">
-                    <h2 class="section-title">分组管理</h2>
+                <div class="tab-content" id="groups-tab">
+                    <h2 class="section-title">添加分组</h2>
                     <div class="form-group">
                         <label for="groupName">分组名称</label>
                         <input type="text" id="groupName" placeholder="例如：科技股">
@@ -393,7 +507,10 @@
                     
                     <div class="form-group">
                         <label for="groupColor">分组颜色</label>
-                        <input type="color" id="groupColor" value="#1a2a6c">
+                        <div style="display: flex; align-items: center;">
+                            <input type="color" id="groupColor" value="#1a2a6c" style="flex: 1;">
+                            <span class="color-preview" id="groupColorPreview" style="background-color: #1a2a6c;"></span>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -408,6 +525,44 @@
                     <h2 class="section-title" style="margin-top: 20px;">我的分组</h2>
                     <div class="group-list" id="groupList">
                         <!-- 分组列表将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="color-groups-tab">
+                    <h2 class="section-title">添加颜色分组</h2>
+                    <div class="form-group">
+                        <label for="colorGroupName">颜色分组名称</label>
+                        <input type="text" id="colorGroupName" placeholder="例如：黄金分组">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="colorGroupColor">分组颜色</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="color" id="colorGroupColor" value="#FFD700" style="flex: 1;">
+                            <span class="color-preview" id="colorGroupColorPreview" style="background-color: #FFD700;"></span>
+                        </div>
+                    </div>
+                    
+                    <button id="addColorGroupBtn" class="btn btn-info">添加颜色分组</button>
+                    
+                    <h2 class="section-title" style="margin-top: 20px;">我的颜色分组</h2>
+                    <div class="color-group-list" id="colorGroupList">
+                        <!-- 颜色分组列表将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="data-io-tab">
+                    <h2 class="section-title">数据导入导出</h2>
+                    <div class="form-group">
+                        <label for="exportData">导出数据</label>
+                        <textarea id="exportData" class="data-textarea" readonly></textarea>
+                        <button id="copyDataBtn" class="btn btn-success">复制数据</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="importData">导入数据</label>
+                        <textarea id="importData" class="data-textarea" placeholder="粘贴导出的数据"></textarea>
+                        <button id="importBtn" class="btn btn-info">导入数据</button>
                     </div>
                 </div>
             </div>
@@ -436,6 +591,10 @@
                         <span>分组数量:</span>
                         <span id="groupCount" class="summary-value">0</span>
                     </div>
+                    <div class="summary-item">
+                        <span>颜色分组数量:</span>
+                        <span id="colorGroupCount" class="summary-value">0</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -454,6 +613,13 @@
                 <div class="form-group">
                     <label for="editValue">持仓市值 (USD)</label>
                     <input type="number" id="editValue" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="editColorGroup">颜色分组</label>
+                    <select id="editColorGroup">
+                        <option value="">无</option>
+                        <!-- 颜色分组选项将通过JS动态生成 -->
+                    </select>
                 </div>
                 <div class="modal-footer">
                     <button id="saveEditBtn" class="btn modal-btn">保存修改</button>
@@ -475,7 +641,10 @@
                 </div>
                 <div class="form-group">
                     <label for="editGroupColor">分组颜色</label>
-                    <input type="color" id="editGroupColor" value="#1a2a6c">
+                    <div style="display: flex; align-items: center;">
+                        <input type="color" id="editGroupColor" value="#1a2a6c" style="flex: 1;">
+                        <span class="color-preview" id="editGroupColorPreview" style="background-color: #1a2a6c;"></span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="editGroupStocks">选择股票</label>
@@ -490,6 +659,31 @@
             </div>
         </div>
         
+        <!-- 编辑颜色分组模态框 -->
+        <div id="editColorGroupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">编辑颜色分组</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label for="editColorGroupName">颜色分组名称</label>
+                    <input type="text" id="editColorGroupName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editColorGroupColor">分组颜色</label>
+                    <div style="display: flex; align-items: center;">
+                        <input type="color" id="editColorGroupColor" value="#FFD700" style="flex: 1;">
+                        <span class="color-preview" id="editColorGroupColorPreview" style="background-color: #FFD700;"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveColorGroupEditBtn" class="btn modal-btn">保存修改</button>
+                    <button id="cancelColorGroupEditBtn" class="btn btn-secondary modal-btn">取消</button>
+                </div>
+            </div>
+        </div>
+        
         <footer>
             <p>© 2023 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
         </footer>
@@ -499,10 +693,12 @@
         // 从localStorage加载持仓数据和分组数据
         let holdings = JSON.parse(localStorage.getItem('stockHoldings')) || [];
         let groups = JSON.parse(localStorage.getItem('stockGroups')) || [];
+        let colorGroups = JSON.parse(localStorage.getItem('colorGroups')) || [];
         let pieChart = null;
         let currentView = 'stock'; // 'stock' 或 'group'
         let editingIndex = -1; // 当前编辑的持仓索引
         let editingGroupIndex = -1; // 当前编辑的分组索引
+        let editingColorGroupIndex = -1; // 当前编辑的颜色分组索引
         
         // DOM元素
         const stockSymbolInput = document.getElementById('stockSymbol');
@@ -514,14 +710,26 @@
         const totalValueEl = document.getElementById('totalValue');
         const stockCountEl = document.getElementById('stockCount');
         const groupCountEl = document.getElementById('groupCount');
+        const colorGroupCountEl = document.getElementById('colorGroupCount');
         const groupNameInput = document.getElementById('groupName');
         const groupColorInput = document.getElementById('groupColor');
+        const groupColorPreview = document.getElementById('groupColorPreview');
         const groupStocksSelect = document.getElementById('groupStocks');
         const addGroupBtn = document.getElementById('addGroupBtn');
         const groupList = document.getElementById('groupList');
+        const colorGroupNameInput = document.getElementById('colorGroupName');
+        const colorGroupColorInput = document.getElementById('colorGroupColor');
+        const colorGroupColorPreview = document.getElementById('colorGroupColorPreview');
+        const addColorGroupBtn = document.getElementById('addColorGroupBtn');
+        const colorGroupList = document.getElementById('colorGroupList');
+        const exportDataTextarea = document.getElementById('exportData');
+        const copyDataBtn = document.getElementById('copyDataBtn');
+        const importDataTextarea = document.getElementById('importData');
+        const importBtn = document.getElementById('importBtn');
         const editModal = document.getElementById('editModal');
         const editSymbolInput = document.getElementById('editSymbol');
         const editValueInput = document.getElementById('editValue');
+        const editColorGroupSelect = document.getElementById('editColorGroup');
         const saveEditBtn = document.getElementById('saveEditBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const closeModalBtn = document.querySelector('.close-modal');
@@ -530,17 +738,28 @@
         const editGroupModal = document.getElementById('editGroupModal');
         const editGroupNameInput = document.getElementById('editGroupName');
         const editGroupColorInput = document.getElementById('editGroupColor');
+        const editGroupColorPreview = document.getElementById('editGroupColorPreview');
         const editGroupStocksSelect = document.getElementById('editGroupStocks');
         const saveGroupEditBtn = document.getElementById('saveGroupEditBtn');
         const cancelGroupEditBtn = document.getElementById('cancelGroupEditBtn');
+        const editColorGroupModal = document.getElementById('editColorGroupModal');
+        const editColorGroupNameInput = document.getElementById('editColorGroupName');
+        const editColorGroupColorInput = document.getElementById('editColorGroupColor');
+        const editColorGroupColorPreview = document.getElementById('editColorGroupColorPreview');
+        const saveColorGroupEditBtn = document.getElementById('saveColorGroupEditBtn');
+        const cancelColorGroupEditBtn = document.getElementById('cancelColorGroupEditBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             renderHoldingsList();
             renderGroupList();
+            renderColorGroupList();
             updateGroupStocksSelect();
             updateChart();
             updateSummary();
+            updateExportData();
             
             // 设置视图切换按钮事件
             stockViewBtn.addEventListener('click', function() {
@@ -553,6 +772,78 @@
                 currentView = 'group';
                 updateActiveViewButtons();
                 updateChart();
+            });
+            
+            // 设置标签切换事件
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 移除所有active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    // 添加active类到当前标签
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+            
+            // 设置颜色输入事件监听器
+            groupColorInput.addEventListener('input', function() {
+                groupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            colorGroupColorInput.addEventListener('input', function() {
+                colorGroupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            editGroupColorInput.addEventListener('input', function() {
+                editGroupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            editColorGroupColorInput.addEventListener('input', function() {
+                editColorGroupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            // 数据导出按钮
+            copyDataBtn.addEventListener('click', function() {
+                exportDataTextarea.select();
+                document.execCommand('copy');
+                alert('数据已复制到剪贴板');
+            });
+            
+            // 数据导入按钮
+            importBtn.addEventListener('click', function() {
+                const data = importDataTextarea.value.trim();
+                if (!data) {
+                    alert('请粘贴导出的数据');
+                    return;
+                }
+                
+                try {
+                    const parsedData = JSON.parse(data);
+                    holdings = parsedData.holdings || [];
+                    groups = parsedData.groups || [];
+                    colorGroups = parsedData.colorGroups || [];
+                    
+                    saveHoldings();
+                    saveGroups();
+                    saveColorGroups();
+                    
+                    renderHoldingsList();
+                    renderGroupList();
+                    renderColorGroupList();
+                    updateGroupStocksSelect();
+                    updateChart();
+                    updateSummary();
+                    updateExportData();
+                    
+                    alert('数据导入成功！');
+                } catch (e) {
+                    alert('数据格式错误，请检查导入的数据');
+                    console.error(e);
+                }
             });
         });
         
@@ -593,6 +884,7 @@
             updateGroupStocksSelect();
             updateChart();
             updateSummary();
+            updateExportData();
             
             // 清空表单
             stockSymbolInput.value = '';
@@ -605,13 +897,17 @@
             if (confirm('确定要清除所有持仓数据吗？此操作不可撤销。')) {
                 holdings = [];
                 groups = [];
+                colorGroups = [];
                 saveHoldings();
                 saveGroups();
+                saveColorGroups();
                 renderHoldingsList();
                 renderGroupList();
+                renderColorGroupList();
                 updateGroupStocksSelect();
                 updateChart();
                 updateSummary();
+                updateExportData();
             }
         });
         
@@ -647,11 +943,51 @@
             renderGroupList();
             updateChart();
             updateSummary();
+            updateExportData();
             
             // 清空表单
             groupNameInput.value = '';
             groupColorInput.value = '#1a2a6c';
+            groupColorPreview.style.backgroundColor = '#1a2a6c';
             groupStocksSelect.selectedIndex = -1;
+        });
+        
+        // 添加颜色分组
+        addColorGroupBtn.addEventListener('click', function() {
+            const name = colorGroupNameInput.value.trim();
+            const color = colorGroupColorInput.value;
+            
+            if (!name) {
+                alert('请输入颜色分组名称');
+                return;
+            }
+            
+            // 检查颜色分组名称是否唯一
+            if (colorGroups.some(group => group.name === name)) {
+                alert('颜色分组名称已存在');
+                return;
+            }
+            
+            // 添加新颜色分组
+            colorGroups.push({
+                id: generateId(),
+                name,
+                color
+            });
+            
+            // 保存到localStorage
+            saveColorGroups();
+            
+            // 更新UI
+            renderColorGroupList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 清空表单
+            colorGroupNameInput.value = '';
+            colorGroupColorInput.value = '#FFD700';
+            colorGroupColorPreview.style.backgroundColor = '#FFD700';
         });
         
         // 生成唯一ID
@@ -669,6 +1005,11 @@
             localStorage.setItem('stockGroups', JSON.stringify(groups));
         }
         
+        // 保存颜色分组到localStorage
+        function saveColorGroups() {
+            localStorage.setItem('colorGroups', JSON.stringify(colorGroups));
+        }
+        
         // 渲染持仓列表
         function renderHoldingsList() {
             holdingsList.innerHTML = '';
@@ -681,10 +1022,21 @@
             holdings.forEach((holding, index) => {
                 const holdingEl = document.createElement('div');
                 holdingEl.className = 'holding-item';
+                
+                // 获取颜色分组信息
+                let colorGroupInfo = '';
+                if (holding.colorGroup) {
+                    const colorGroup = colorGroups.find(cg => cg.id === holding.colorGroup);
+                    if (colorGroup) {
+                        colorGroupInfo = `<div style="color: ${colorGroup.color}">${colorGroup.name}</div>`;
+                    }
+                }
+                
                 holdingEl.innerHTML = `
                     <div class="holding-info">
                         <div class="holding-symbol">${holding.symbol}</div>
                         <div class="holding-details">$${holding.value.toFixed(2)}</div>
+                        ${colorGroupInfo}
                     </div>
                     <div class="action-buttons">
                         <button class="action-btn edit-btn" data-index="${index}">✏️</button>
@@ -704,6 +1056,7 @@
                     updateGroupStocksSelect();
                     updateChart();
                     updateSummary();
+                    updateExportData();
                 });
             });
             
@@ -757,6 +1110,7 @@
                     renderGroupList();
                     updateChart();
                     updateSummary();
+                    updateExportData();
                 });
             });
             
@@ -765,6 +1119,56 @@
                 btn.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-index'));
                     openEditGroupModal(index);
+                });
+            });
+        }
+        
+        // 渲染颜色分组列表
+        function renderColorGroupList() {
+            colorGroupList.innerHTML = '';
+            
+            if (colorGroups.length === 0) {
+                colorGroupList.innerHTML = '<div class="no-data">暂无颜色分组数据</div>';
+                return;
+            }
+            
+            colorGroups.forEach((group, index) => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'color-group-item';
+                
+                groupEl.innerHTML = `
+                    <div>
+                        <div class="color-group-name">
+                            <span class="color-group-color" style="background-color: ${group.color}"></span>
+                            ${group.name}
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn edit-btn" data-index="${index}">✏️</button>
+                        <button class="action-btn delete-btn" data-index="${index}">×</button>
+                    </div>
+                `;
+                colorGroupList.appendChild(groupEl);
+            });
+            
+            // 添加删除事件监听器
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    colorGroups.splice(index, 1);
+                    saveColorGroups();
+                    renderColorGroupList();
+                    updateChart();
+                    updateSummary();
+                    updateExportData();
+                });
+            });
+            
+            // 添加编辑事件监听器
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditColorGroupModal(index);
                 });
             });
         }
@@ -791,6 +1195,16 @@
             editSymbolInput.value = holding.symbol;
             editValueInput.value = holding.value;
             
+            // 更新颜色分组选择框
+            editColorGroupSelect.innerHTML = '<option value="">无</option>';
+            colorGroups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = group.name;
+                option.selected = holding.colorGroup === group.id;
+                editColorGroupSelect.appendChild(option);
+            });
+            
             editModal.style.display = 'flex';
         }
         
@@ -807,6 +1221,7 @@
             
             editGroupNameInput.value = group.name;
             editGroupColorInput.value = group.color;
+            editGroupColorPreview.style.backgroundColor = group.color;
             
             // 设置选中的股票
             Array.from(editGroupStocksSelect.options).forEach(option => {
@@ -822,10 +1237,29 @@
             editingGroupIndex = -1;
         }
         
+        // 打开编辑颜色分组模态框
+        function openEditColorGroupModal(index) {
+            editingColorGroupIndex = index;
+            const group = colorGroups[index];
+            
+            editColorGroupNameInput.value = group.name;
+            editColorGroupColorInput.value = group.color;
+            editColorGroupColorPreview.style.backgroundColor = group.color;
+            
+            editColorGroupModal.style.display = 'flex';
+        }
+        
+        // 关闭编辑颜色分组模态框
+        function closeEditColorGroupModal() {
+            editColorGroupModal.style.display = 'none';
+            editingColorGroupIndex = -1;
+        }
+        
         // 保存持仓编辑
         saveEditBtn.addEventListener('click', function() {
             const symbol = editSymbolInput.value.trim().toUpperCase();
             const value = parseFloat(editValueInput.value);
+            const colorGroup = editColorGroupSelect.value;
             
             if (!symbol || isNaN(value) || value <= 0) {
                 alert('请填写所有字段并确保数值有效');
@@ -835,7 +1269,8 @@
             // 更新持仓数据
             holdings[editingIndex] = {
                 symbol,
-                value
+                value,
+                colorGroup
             };
             
             // 保存到localStorage
@@ -847,6 +1282,7 @@
             renderGroupList();
             updateChart();
             updateSummary();
+            updateExportData();
             
             // 关闭模态框
             closeEditModal();
@@ -884,14 +1320,53 @@
             renderGroupList();
             updateChart();
             updateSummary();
+            updateExportData();
             
             // 关闭模态框
             closeEditGroupModal();
         });
         
+        // 保存颜色分组编辑
+        saveColorGroupEditBtn.addEventListener('click', function() {
+            const name = editColorGroupNameInput.value.trim();
+            const color = editColorGroupColorInput.value;
+            
+            if (!name) {
+                alert('请输入颜色分组名称');
+                return;
+            }
+            
+            // 检查颜色分组名称是否唯一（排除自身）
+            if (colorGroups.some((group, index) => group.name === name && index !== editingColorGroupIndex)) {
+                alert('颜色分组名称已存在');
+                return;
+            }
+            
+            // 更新颜色分组数据
+            colorGroups[editingColorGroupIndex] = {
+                ...colorGroups[editingColorGroupIndex],
+                name,
+                color
+            };
+            
+            // 保存到localStorage
+            saveColorGroups();
+            
+            // 更新UI
+            renderColorGroupList();
+            renderHoldingsList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 关闭模态框
+            closeEditColorGroupModal();
+        });
+        
         // 取消编辑
         cancelEditBtn.addEventListener('click', closeEditModal);
         cancelGroupEditBtn.addEventListener('click', closeEditGroupModal);
+        cancelColorGroupEditBtn.addEventListener('click', closeEditColorGroupModal);
         closeModalBtn.addEventListener('click', closeEditModal);
         
         // 点击模态框外部关闭
@@ -901,6 +1376,9 @@
             }
             if (event.target === editGroupModal) {
                 closeEditGroupModal();
+            }
+            if (event.target === editColorGroupModal) {
+                closeEditColorGroupModal();
             }
         });
         
@@ -915,7 +1393,7 @@
             if (holdings.length === 0) {
                 // 没有数据时显示提示
                 ctx.fillStyle = '#777';
-                ctx.font = '20px Arial';
+                ctx.font = '18px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText('暂无持仓数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
                 return;
@@ -928,7 +1406,7 @@
                 // 按股票显示
                 labels = holdings.map(h => h.symbol);
                 const values = holdings.map(h => h.value);
-                const backgroundColors = generateColors(holdings.length);
+                const backgroundColors = holdings.map(h => getStockColor(h));
                 
                 pieChart = new Chart(ctx, {
                     type: 'pie',
@@ -947,7 +1425,7 @@
                 // 按分组显示
                 if (groups.length === 0) {
                     ctx.fillStyle = '#777';
-                    ctx.font = '20px Arial';
+                    ctx.font = '18px Arial';
                     ctx.textAlign = 'center';
                     ctx.fillText('暂无分组数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
                     return;
@@ -976,7 +1454,7 @@
                 ungroupedStocks.forEach(stock => {
                     groupLabels.push(stock.symbol);
                     groupValues.push(stock.value);
-                    groupColors.push('#cccccc');
+                    groupColors.push(getStockColor(stock));
                 });
                 
                 pieChart = new Chart(ctx, {
@@ -992,6 +1470,27 @@
                     options: getChartOptions('分组持仓分布')
                 });
             }
+        }
+        
+        // 获取股票颜色
+        function getStockColor(stock) {
+            // 如果股票有颜色分组，使用颜色分组的颜色
+            if (stock.colorGroup) {
+                const colorGroup = colorGroups.find(cg => cg.id === stock.colorGroup);
+                if (colorGroup) {
+                    return colorGroup.color;
+                }
+            }
+            
+            // 如果股票属于某个分组，使用分组颜色的浅色变体
+            const group = groups.find(g => g.stocks.includes(stock.symbol));
+            if (group && group.color) {
+                return lightenColor(group.color, 30);
+            }
+            
+            // 否则使用自动生成的颜色
+            const index = holdings.findIndex(h => h.symbol === stock.symbol);
+            return generateColor(index, holdings.length);
         }
         
         // 计算分组价值
@@ -1046,16 +1545,41 @@
         }
         
         // 生成随机颜色
-        function generateColors(count) {
-            const colors = [];
-            const hueStep = 360 / count;
-            
-            for (let i = 0; i < count; i++) {
-                const hue = i * hueStep;
-                colors.push(`hsl(${hue}, 70%, 60%)`);
+        function generateColor(index, total) {
+            const hue = (index * 360) / total;
+            return `hsl(${hue}, 70%, 60%)`;
+        }
+        
+        // 颜色变浅函数
+        function lightenColor(color, percent) {
+            // 处理十六进制颜色
+            if (color.startsWith('#')) {
+                let r = parseInt(color.substring(1, 3), 16);
+                let g = parseInt(color.substring(3, 5), 16);
+                let b = parseInt(color.substring(5, 7), 16);
+                
+                r = Math.min(255, r + (255 - r) * percent / 100);
+                g = Math.min(255, g + (255 - g) * percent / 100);
+                b = Math.min(255, b + (255 - b) * percent / 100);
+                
+                return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`;
             }
             
-            return colors;
+            // 处理HSL颜色
+            if (color.startsWith('hsl')) {
+                const match = color.match(/hsl\((\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
+                if (match) {
+                    const h = parseInt(match[1]);
+                    const s = parseFloat(match[2]);
+                    let l = parseFloat(match[3]);
+                    
+                    l = Math.min(100, l + (100 - l) * percent / 100);
+                    
+                    return `hsl(${h}, ${s}%, ${l}%)`;
+                }
+            }
+            
+            return color; // 无法处理则返回原色
         }
         
         // 更新摘要信息
@@ -1063,10 +1587,22 @@
             const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
             const stockCount = holdings.length;
             const groupCount = groups.length;
+            const colorGroupCount = colorGroups.length;
             
             totalValueEl.textContent = `$${totalValue.toFixed(2)}`;
             stockCountEl.textContent = stockCount;
             groupCountEl.textContent = groupCount;
+            colorGroupCountEl.textContent = colorGroupCount;
+        }
+        
+        // 更新导出数据
+        function updateExportData() {
+            const data = {
+                holdings: holdings,
+                groups: groups,
+                colorGroups: colorGroups
+            };
+            exportDataTextarea.value = JSON.stringify(data, null, 2);
         }
     </script>
 </body>
