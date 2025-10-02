@@ -83,7 +83,7 @@
 
     // 预设文本库
     const defaultPresetTexts = [
-        { name: "CCC", text: "I am about to send you the contents that our teacher gave us. Please help me to explain the ideas, concepts and the meanings of these contents below. The more detailed the better, so that I can understand! Please explain what this contents is talking about, and remember to use Simplified Chinese. The clearer the better, NOT USE LATEX:\n\n" },
+        { name: "CCC", text: "I am about to send you the contents that our teacher gave us. Please help me to explain the ideas, concepts and the meanings of these contents below. The more detailed the better, so that I can understand! Please explain what this contents is talking about, and remember to use Simplified Chinese. The clearer the better, DO NOT USE LATEX MATHS NOTATION:\n\n" },
         { name: "TTT", text: "Continue to translate these below, remember YOU ARE designed to act as a sophisticated translator, translating any given language into Simplified Chinese. It focuses on achieving natural, fluid, and authentic expressions in the translations, avoiding a translational tone. The translations provided will strive for elegance and sophistication in word choice, ensuring that the meaning of EVERY SINGLE SENTENCE AND WORDS is conveyed accurately and gracefully. Additionally, please retain the original terminology with annotations. NO explanation before and after translation, NO SUMMARIES, NO Brackets, NO （注：）, KEEP MARKDOWN FORMAT with html, KEEP THE ORIGINAL LINKS IN TEXT:\n\n" }
     ];
 
