@@ -1012,7 +1012,7 @@
             localStorage.setItem('colorGroups', JSON.stringify(colorGroups));
         }
         
-        // 渲染持仓列表
+        // 渲染持仓列表（按持仓市值降序排序）
         function renderHoldingsList() {
             holdingsList.innerHTML = '';
             
@@ -1021,7 +1021,10 @@
                 return;
             }
             
-            holdings.forEach((holding, index) => {
+            // 按持仓市值降序排序
+            const sortedHoldings = [...holdings].sort((a, b) => b.value - a.value);
+            
+            sortedHoldings.forEach((holding, index) => {
                 const holdingEl = document.createElement('div');
                 holdingEl.className = 'holding-item';
                 
@@ -1041,8 +1044,8 @@
                         ${colorGroupInfo}
                     </div>
                     <div class="action-buttons">
-                        <button class="action-btn edit-holding-btn" data-index="${index}">✏️</button>
-                        <button class="action-btn delete-holding-btn" data-index="${index}">×</button>
+                        <button class="action-btn edit-holding-btn" data-index="${holdings.indexOf(holding)}">✏️</button>
+                        <button class="action-btn delete-holding-btn" data-index="${holdings.indexOf(holding)}">×</button>
                     </div>
                 `;
                 holdingsList.appendChild(holdingEl);
@@ -1071,7 +1074,7 @@
             });
         }
         
-        // 渲染分组列表
+        // 渲染分组列表（按分组价值降序排序）
         function renderGroupList() {
             groupList.innerHTML = '';
             
@@ -1080,7 +1083,14 @@
                 return;
             }
             
-            groups.forEach((group, index) => {
+            // 按分组价值降序排序
+            const sortedGroups = [...groups].sort((a, b) => {
+                const aValue = calculateGroupValue(a);
+                const bValue = calculateGroupValue(b);
+                return bValue - aValue;
+            });
+            
+            sortedGroups.forEach((group, index) => {
                 const groupEl = document.createElement('div');
                 groupEl.className = 'group-item';
                 
@@ -1096,8 +1106,8 @@
                         <div class="group-stocks">${stockNames}</div>
                     </div>
                     <div class="action-buttons">
-                        <button class="action-btn edit-group-btn" data-index="${index}">✏️</button>
-                        <button class="action-btn delete-group-btn" data-index="${index}">×</button>
+                        <button class="action-btn edit-group-btn" data-index="${groups.indexOf(group)}">✏️</button>
+                        <button class="action-btn delete-group-btn" data-index="${groups.indexOf(group)}">×</button>
                     </div>
                 `;
                 groupList.appendChild(groupEl);
@@ -1384,7 +1394,7 @@
             }
         });
         
-        // 更新饼图
+        // 更新饼图（添加排序）
         function updateChart() {
             const ctx = pieChartCanvas.getContext('2d');
             
@@ -1405,10 +1415,11 @@
             let labels, datasets;
             
             if (currentView === 'stock') {
-                // 按股票显示
-                labels = holdings.map(h => h.symbol);
-                const values = holdings.map(h => h.value);
-                const backgroundColors = holdings.map(h => getStockColor(h));
+                // 按股票显示 - 按持仓市值降序排序
+                const sortedHoldings = [...holdings].sort((a, b) => b.value - a.value);
+                labels = sortedHoldings.map(h => h.symbol);
+                const values = sortedHoldings.map(h => h.value);
+                const backgroundColors = sortedHoldings.map(h => getStockColor(h));
                 
                 pieChart = new Chart(ctx, {
                     type: 'pie',
@@ -1424,7 +1435,7 @@
                 });
             } 
             else if (currentView === 'group') {
-                // 按分组显示
+                // 按分组显示 - 按分组价值降序排序
                 if (groups.length === 0) {
                     ctx.fillStyle = '#777';
                     ctx.font = '20px Arial';
@@ -1434,17 +1445,18 @@
                 }
                 
                 // 准备分组数据
-                const groupLabels = [];
-                const groupValues = [];
-                const groupColors = [];
+                const groupData = [];
                 
                 // 添加分组数据
                 groups.forEach(group => {
                     const groupValue = calculateGroupValue(group);
                     if (groupValue > 0) {
-                        groupLabels.push(group.name);
-                        groupValues.push(groupValue);
-                        groupColors.push(group.color);
+                        groupData.push({
+                            label: group.name,
+                            value: groupValue,
+                            color: group.color,
+                            isGroup: true
+                        });
                     }
                 });
                 
@@ -1454,10 +1466,20 @@
                 });
                 
                 ungroupedStocks.forEach(stock => {
-                    groupLabels.push(stock.symbol);
-                    groupValues.push(stock.value);
-                    groupColors.push(getStockColor(stock));
+                    groupData.push({
+                        label: stock.symbol,
+                        value: stock.value,
+                        color: getStockColor(stock),
+                        isGroup: false
+                    });
                 });
+                
+                // 按价值降序排序
+                groupData.sort((a, b) => b.value - a.value);
+                
+                const groupLabels = groupData.map(item => item.label);
+                const groupValues = groupData.map(item => item.value);
+                const groupColors = groupData.map(item => item.color);
                 
                 pieChart = new Chart(ctx, {
                     type: 'pie',
