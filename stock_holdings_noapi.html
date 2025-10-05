@@ -461,43 +461,6 @@
             vertical-align: middle;
             border: 1px solid #ddd;
         }
-        
-        .price-info {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 5px;
-            font-size: 0.85rem;
-        }
-        
-        .current-price {
-            font-weight: bold;
-            color: #1a2a6c;
-        }
-        
-        .price-change {
-            font-weight: bold;
-        }
-        
-        .positive {
-            color: #28a745;
-        }
-        
-        .negative {
-            color: #dc3545;
-        }
-        
-        .update-prices-btn {
-            color: #feb21a;
-            background: linear-gradient(to right, #d2c1b6, #456882, #234c6a, #1b3c53);
-        }
-        
-        .loading-indicator {
-            display: none;
-            text-align: center;
-            color: #1a2a6c;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
@@ -524,14 +487,12 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="shares">股数</label>
-                        <input type="number" id="shares" placeholder="例如：100" step="0.0001" min="0.0001" required>
+                        <label for="value">持仓市值 (USD)</label>
+                        <input type="number" id="value" placeholder="例如：15000.00" step="0.01" min="0.01" required>
                     </div>
                     
                     <button id="addBtn" class="btn">添加持仓</button>
                     <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
-                    <button id="updatePricesBtn" class="btn btn-info update-prices-btn">更新所有股价</button>
-                    <div class="loading-indicator" id="priceLoading">更新股价中...</div>
                     
                     <h2 class="section-title" style="margin-top: 20px;">我的持仓</h2>
                     <div class="holdings-list" id="holdingsList">
@@ -652,8 +613,8 @@
                     <input type="text" id="editSymbol" required>
                 </div>
                 <div class="form-group">
-                    <label for="editShares">股数</label>
-                    <input type="number" id="editShares" step="0.0001" min="0.0001" required>
+                    <label for="editValue">持仓市值 (USD)</label>
+                    <input type="number" id="editValue" step="0.01" min="0.01" required>
                 </div>
                 <div class="form-group">
                     <label for="editColorGroup">颜色分组</label>
@@ -726,7 +687,7 @@
         </div>
         
         <footer>
-            <p>© 2025 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
+            <p>© 2023 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
         </footer>
     </div>
 
@@ -740,19 +701,12 @@
         let editingIndex = -1; // 当前编辑的持仓索引
         let editingGroupIndex = -1; // 当前编辑的分组索引
         let editingColorGroupIndex = -1; // 当前编辑的颜色分组索引
-        let priceUpdateInterval = null; // 股价更新定时器
-        
-        // API配置
-        const API_TOKEN = 'd3h2jspr01qpep68sd4gd3h2jspr01qpep68sd50'; // 免费API token
-        const API_BASE_URL = 'https://finnhub.io/api/v1/quote';
         
         // DOM元素
         const stockSymbolInput = document.getElementById('stockSymbol');
-        const sharesInput = document.getElementById('shares');
+        const valueInput = document.getElementById('value');
         const addBtn = document.getElementById('addBtn');
         const clearBtn = document.getElementById('clearBtn');
-        const updatePricesBtn = document.getElementById('updatePricesBtn');
-        const priceLoading = document.getElementById('priceLoading');
         const holdingsList = document.getElementById('holdingsList');
         const pieChartCanvas = document.getElementById('pieChart');
         const totalValueEl = document.getElementById('totalValue');
@@ -776,7 +730,7 @@
         const importBtn = document.getElementById('importBtn');
         const editModal = document.getElementById('editModal');
         const editSymbolInput = document.getElementById('editSymbol');
-        const editSharesInput = document.getElementById('editShares');
+        const editValueInput = document.getElementById('editValue');
         const editColorGroupSelect = document.getElementById('editColorGroup');
         const saveEditBtn = document.getElementById('saveEditBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -808,9 +762,6 @@
             updateChart();
             updateSummary();
             updateExportData();
-            
-            // 启动股价轮询
-            startPricePolling();
             
             // 设置视图切换按钮事件
             stockViewBtn.addEventListener('click', function() {
@@ -890,97 +841,13 @@
                     updateSummary();
                     updateExportData();
                     
-                    // 重新启动股价轮询
-                    startPricePolling();
-                    
                     alert('数据导入成功！');
                 } catch (e) {
                     alert('数据格式错误，请检查导入的数据');
                     console.error(e);
                 }
             });
-            
-            // 更新所有股价按钮
-            updatePricesBtn.addEventListener('click', function() {
-                updateAllStockPrices();
-            });
         });
-        
-        // 启动股价轮询
-        function startPricePolling() {
-            // 清除现有定时器
-            if (priceUpdateInterval) {
-                clearInterval(priceUpdateInterval);
-            }
-            
-            // 立即更新一次
-            updateAllStockPrices();
-            
-            // 每1分钟更新一次
-            priceUpdateInterval = setInterval(updateAllStockPrices, 1 * 60 * 1000);
-        }
-        
-        // 更新所有股票价格
-        function updateAllStockPrices() {
-            if (holdings.length === 0) return;
-            
-            priceLoading.style.display = 'block';
-            
-            // 依次更新每个持仓的股价
-            let index = 0;
-            const updateNextStock = () => {
-                if (index < holdings.length) {
-                    updateStockPrice(holdings[index].symbol, index).then(() => {
-                        index++;
-                        setTimeout(updateNextStock, 1000); // 每秒更新一个股票
-                    }).catch(error => {
-                        console.error(`更新股票 ${holdings[index].symbol} 价格失败:`, error);
-                        index++;
-                        setTimeout(updateNextStock, 1000);
-                    });
-                } else {
-                    // 所有股票更新完成
-                    priceLoading.style.display = 'none';
-                    saveHoldings();
-                    renderHoldingsList();
-                    updateChart();
-                    updateSummary();
-                }
-            };
-            
-            updateNextStock();
-        }
-        
-        // 更新单个股票价格
-        async function updateStockPrice(symbol, index) {
-            try {
-                const response = await fetch(`${API_BASE_URL}?symbol=${symbol}&token=${API_TOKEN}`);
-                const data = await response.json();
-                
-                if (data && data.c) {
-                    // 更新持仓中的当前价格
-                    holdings[index].currentPrice = data.c;
-                    holdings[index].previousClose = data.pc;
-                    holdings[index].change = data.d;
-                    holdings[index].changePercent = data.dp;
-                    
-                    return true;
-                } else {
-                    throw new Error('未获取到有效价格数据');
-                }
-            } catch (error) {
-                console.error(`获取股票 ${symbol} 价格失败:`, error);
-                return false;
-            }
-        }
-        
-        // 计算持仓价值
-        function calculateHoldingValue(holding) {
-            if (holding.currentPrice && holding.shares) {
-                return holding.shares * holding.currentPrice;
-            }
-            return 0;
-        }
         
         // 更新活动视图按钮样式
         function updateActiveViewButtons() {
@@ -991,9 +858,9 @@
         // 添加持仓
         addBtn.addEventListener('click', function() {
             const symbol = stockSymbolInput.value.trim().toUpperCase();
-            const shares = parseFloat(sharesInput.value);
+            const value = parseFloat(valueInput.value);
             
-            if (!symbol || isNaN(shares) || shares <= 0) {
+            if (!symbol || isNaN(value) || value <= 0) {
                 alert('请填写所有字段并确保数值有效');
                 return;
             }
@@ -1002,16 +869,12 @@
             const existingIndex = holdings.findIndex(h => h.symbol === symbol);
             if (existingIndex !== -1) {
                 // 更新现有持仓
-                holdings[existingIndex].shares += shares;
+                holdings[existingIndex].value += value;
             } else {
                 // 添加新持仓
                 holdings.push({
                     symbol,
-                    shares,
-                    currentPrice: 0,
-                    previousClose: 0,
-                    change: 0,
-                    changePercent: 0
+                    value
                 });
             }
             
@@ -1025,18 +888,9 @@
             updateSummary();
             updateExportData();
             
-            // 更新新添加的股票价格
-            const index = holdings.findIndex(h => h.symbol === symbol);
-            updateStockPrice(symbol, index).then(() => {
-                saveHoldings();
-                renderHoldingsList();
-                updateChart();
-                updateSummary();
-            });
-            
             // 清空表单
             stockSymbolInput.value = '';
-            sharesInput.value = '';
+            valueInput.value = '';
             stockSymbolInput.focus();
         });
         
@@ -1056,12 +910,6 @@
                 updateChart();
                 updateSummary();
                 updateExportData();
-                
-                // 停止股价轮询
-                if (priceUpdateInterval) {
-                    clearInterval(priceUpdateInterval);
-                    priceUpdateInterval = null;
-                }
             }
         });
         
@@ -1174,11 +1022,7 @@
             }
             
             // 按持仓市值降序排序
-            const sortedHoldings = [...holdings].sort((a, b) => {
-                const aValue = calculateHoldingValue(a);
-                const bValue = calculateHoldingValue(b);
-                return bValue - aValue;
-            });
+            const sortedHoldings = [...holdings].sort((a, b) => b.value - a.value);
             
             sortedHoldings.forEach((holding, index) => {
                 const holdingEl = document.createElement('div');
@@ -1193,30 +1037,10 @@
                     }
                 }
                 
-                // 计算持仓价值
-                const holdingValue = calculateHoldingValue(holding);
-                
-                // 格式化价格信息
-                let priceInfo = '';
-                if (holding.currentPrice) {
-                    const changeClass = holding.change >= 0 ? 'positive' : 'negative';
-                    const changeSign = holding.change >= 0 ? '+' : '';
-                    priceInfo = `
-                        <div class="price-info">
-                            <span class="current-price">$${holding.currentPrice.toFixed(2)}</span>
-                            <span class="price-change ${changeClass}">${changeSign}${holding.change.toFixed(2)} (${changeSign}${holding.changePercent.toFixed(2)}%)</span>
-                        </div>
-                    `;
-                }
-                
                 holdingEl.innerHTML = `
                     <div class="holding-info">
                         <div class="holding-symbol">${holding.symbol}</div>
-                        <div class="holding-details">
-                            股数: ${holding.shares}
-                            ${priceInfo}
-                            持仓价值: $${holdingValue.toFixed(2)}
-                        </div>
+                        <div class="holding-details">$${holding.value.toFixed(2)}</div>
                         ${colorGroupInfo}
                     </div>
                     <div class="action-buttons">
@@ -1369,7 +1193,7 @@
             holdings.forEach(holding => {
                 const option = document.createElement('option');
                 option.value = holding.symbol;
-                option.textContent = `${holding.symbol} (${holding.shares}股)`;
+                option.textContent = `${holding.symbol} ($${holding.value.toFixed(2)})`;
                 groupStocksSelect.appendChild(option);
                 editGroupStocksSelect.appendChild(option.cloneNode(true));
             });
@@ -1381,7 +1205,7 @@
             const holding = holdings[index];
             
             editSymbolInput.value = holding.symbol;
-            editSharesInput.value = holding.shares;
+            editValueInput.value = holding.value;
             
             // 更新颜色分组选择框
             editColorGroupSelect.innerHTML = '<option value="">无</option>';
@@ -1446,38 +1270,34 @@
         // 保存持仓编辑
         saveEditBtn.addEventListener('click', function() {
             const symbol = editSymbolInput.value.trim().toUpperCase();
-            const shares = parseFloat(editSharesInput.value);
+            const value = parseFloat(editValueInput.value);
             const colorGroup = editColorGroupSelect.value;
             
-            if (!symbol || isNaN(shares) || shares <= 0) {
+            if (!symbol || isNaN(value) || value <= 0) {
                 alert('请填写所有字段并确保数值有效');
                 return;
             }
             
             // 更新持仓数据
             holdings[editingIndex] = {
-                ...holdings[editingIndex],
                 symbol,
-                shares,
+                value,
                 colorGroup
             };
             
             // 保存到localStorage
             saveHoldings();
             
-            // 更新股价
-            updateStockPrice(symbol, editingIndex).then(() => {
-                // 更新UI
-                renderHoldingsList();
-                updateGroupStocksSelect();
-                renderGroupList();
-                updateChart();
-                updateSummary();
-                updateExportData();
-                
-                // 关闭模态框
-                closeEditModal();
-            });
+            // 更新UI
+            renderHoldingsList();
+            updateGroupStocksSelect();
+            renderGroupList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 关闭模态框
+            closeEditModal();
         });
         
         // 保存分组编辑
@@ -1596,14 +1416,9 @@
             
             if (currentView === 'stock') {
                 // 按股票显示 - 按持仓市值降序排序
-                const sortedHoldings = [...holdings].sort((a, b) => {
-                    const aValue = calculateHoldingValue(a);
-                    const bValue = calculateHoldingValue(b);
-                    return bValue - aValue;
-                });
-                
+                const sortedHoldings = [...holdings].sort((a, b) => b.value - a.value);
                 labels = sortedHoldings.map(h => h.symbol);
-                const values = sortedHoldings.map(h => calculateHoldingValue(h));
+                const values = sortedHoldings.map(h => h.value);
                 const backgroundColors = sortedHoldings.map(h => getStockColor(h));
                 
                 pieChart = new Chart(ctx, {
@@ -1653,7 +1468,7 @@
                 ungroupedStocks.forEach(stock => {
                     groupData.push({
                         label: stock.symbol,
-                        value: calculateHoldingValue(stock),
+                        value: stock.value,
                         color: getStockColor(stock),
                         isGroup: false
                     });
@@ -1710,7 +1525,7 @@
             group.stocks.forEach(symbol => {
                 const holding = holdings.find(h => h.symbol === symbol);
                 if (holding) {
-                    value += calculateHoldingValue(holding);
+                    value += holding.value;
                 }
             });
             
@@ -1793,7 +1608,7 @@
         
         // 更新摘要信息
         function updateSummary() {
-            const totalValue = holdings.reduce((sum, h) => sum + calculateHoldingValue(h), 0);
+            const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
             const stockCount = holdings.length;
             const groupCount = groups.length;
             const colorGroupCount = colorGroups.length;
