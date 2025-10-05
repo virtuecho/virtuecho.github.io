@@ -119,8 +119,8 @@
         }
         
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .btn-secondary {
@@ -531,7 +531,6 @@
                     <button id="addBtn" class="btn">添加持仓</button>
                     <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
                     <button id="updatePricesBtn" class="btn btn-info update-prices-btn">更新所有股价</button>
-                    <div class="loading-indicator" id="priceLoading">更新股价中...</div>
                     
                     <h2 class="section-title" style="margin-top: 20px;">我的持仓</h2>
                     <div class="holdings-list" id="holdingsList">
@@ -727,6 +726,7 @@
         
         <footer>
             <p>© 2025 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
+			<p>最后更新时间: <span id="lastUpdate">--</span></p>
         </footer>
     </div>
 
@@ -774,6 +774,7 @@
         const copyDataBtn = document.getElementById('copyDataBtn');
         const importDataTextarea = document.getElementById('importData');
         const importBtn = document.getElementById('importBtn');
+        const lastUpdateEl = document.getElementById('lastUpdate');
         const editModal = document.getElementById('editModal');
         const editSymbolInput = document.getElementById('editSymbol');
         const editSharesInput = document.getElementById('editShares');
@@ -808,6 +809,7 @@
             updateChart();
             updateSummary();
             updateExportData();
+            updateLastUpdateTime();
             
             // 启动股价轮询
             startPricePolling();
@@ -924,7 +926,11 @@
         function updateAllStockPrices() {
             if (holdings.length === 0) return;
             
-            priceLoading.style.display = 'block';
+            // 保存原始按钮文本
+            const originalText = updatePricesBtn.textContent;
+            // 更新按钮状态
+            updatePricesBtn.textContent = '更新股价中...';
+            updatePricesBtn.disabled = true;
             
             // 依次更新每个持仓的股价
             let index = 0;
@@ -932,15 +938,18 @@
                 if (index < holdings.length) {
                     updateStockPrice(holdings[index].symbol, index).then(() => {
                         index++;
-                        setTimeout(updateNextStock, 1000); // 每秒更新一个股票
+                        setTimeout(updateNextStock, 50); // 每0.05秒更新一个股票
+                        updateLastUpdateTime();
                     }).catch(error => {
                         console.error(`更新股票 ${holdings[index].symbol} 价格失败:`, error);
                         index++;
-                        setTimeout(updateNextStock, 1000);
+                        setTimeout(updateNextStock, 50);
                     });
                 } else {
-                    // 所有股票更新完成
-                    priceLoading.style.display = 'none';
+                    // 所有股票更新完成后恢复按钮状态
+                    updatePricesBtn.textContent = originalText;
+                    updatePricesBtn.disabled = false;
+                    
                     saveHoldings();
                     renderHoldingsList();
                     updateChart();
@@ -1813,6 +1822,20 @@
             };
             exportDataTextarea.value = JSON.stringify(data, null, 2);
         }
+
+        // 更新最后更新时间
+        function updateLastUpdateTime() {
+            const now = new Date();
+            lastUpdateEl.textContent = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
     </script>
 </body>
 </html>
