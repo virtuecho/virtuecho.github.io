@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <!-- Written by ChatGPT GPT-5 Free on Thursday, 4 September 2025 -->
+  <!-- Edit by Deepseek R1 thru Tencent Yuanbao on Thursday, 4 September 2025 -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>止盈止损计算器</title>
+  <style>
+    :root {
+      --green-bg: #dcfce7; /* 淡绿色背景 */
+      --red-bg: #fee2e2;   /* 淡红色背景 */
+      --neutral-bg: #f8fafc;
+      --accent:#2563eb;
+      --muted:#475569;
+      --profit-color: #16a34a;
+      --loss-color: #dc2626;
+      --modified-color: #f97316;
+      --active-color: #3b82f6;
+      --warning-color: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      padding: 24px;
+      background: var(--neutral-bg);
+      color: #111827;
+      transition: background 0.3s ease;
+    }
+    h1 { margin: 0 0 16px; font-size: 22px; text-align: center; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; }
+    input[type=number] {
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1);
+      background: #fff; color: #111827; font-size: 15px;
+    }
+    .row { display: flex; gap: 12px; margin-bottom: 12px; }
+    .col { flex: 1; }
+    .btn { display: inline-block; padding: 12px 18px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 15px; }
+    .btn-select { flex: 1; text-align: center; }
+    .btn-long { background: #22c55e; color: white; }
+    .btn-short { background: #ef4444; color: white; }
+    .btn-secondary { background: transparent; border: 1px solid rgba(0,0,0,0.2); color: var(--muted); }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    .result { margin-top: 20px; padding: 16px; border-radius: 10px; background: #fff; color: #111827; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .note { font-size: 13px; color: #b45309; margin-top: 8px; }
+    .small { font-size: 13px; color: var(--muted); }
+    .badge { display:inline-block; padding:6px 8px; border-radius:8px; background:rgba(0,0,0,0.05); font-size:13px; color:#111827 }
+    .result-row { display: flex; justify-content: space-between; margin-top: 8px; }
+    .result-value { font-weight: 700; }
+    .profit { color: var(--profit-color); }
+    .loss { color: var(--loss-color); }
+    .input-group { margin-bottom: 16px; }
+    .modified { color: var(--modified-color); font-weight: 600; }
+    .btn-disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-active { background-color: var(--active-color); color: white; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-long.active { background-color: #15803d; }
+    .btn-short.active { background-color: #b91c1c; }
+    .btn-params-modified { background-color: var(--warning-color); color: white; }
+    .warning { color: var(--warning-color); font-size: 13px; margin-top: 4px; }
+    .error { color: #dc2626; font-size: 13px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>止盈止损计算器</h1>
+
+  <div class="input-group">
+    <label>当前价格</label>
+    <input id="price" type="number" step="0.0001" placeholder="输入当前价格" />
+  </div>
+
+  <div class="row" style="margin-top:12px;">
+    <button id="longBtn" class="btn btn-select btn-long active">多单</button>
+    <button id="shortBtn" class="btn btn-select btn-short">空单</button>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <label>止盈百分比</label>
+      <input id="tpPercent" type="number" step="0.0001" />
+      <div class="small">默认：多单 1，空单 -1</div>
+      <div id="tpWarning" class="error" style="display:none;"></div>
+    </div>
+    <div class="col">
+      <label>止损百分比</label>
+      <input id="slPercent" type="number" step="0.0001" />
+      <div class="small">默认：多单 -0.4，空单 0.4</div>
+      <div id="slWarning" class="error" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label>预算 (默认 10000)</label>
+    <input id="budget" type="number" step="0.01" />
+  </div>
+
+  <div class="flex-between">
+    <div class="btn-group">
+      <button id="applyBtn" class="btn btn-disabled" style="background:var(--accent);color:#fff">计算</button>
+      <button id="fractionBtn" class="btn btn-secondary">碎股模式</button>
+      <button id="resetParamsBtn" class="btn btn-secondary">重置止盈止损百分比</button>
+      <button id="resetBtn" class="btn btn-secondary">重置</button>
+    </div>
+    <div class="badge" id="statusBadge">使用默认参数</div>
+  </div>
+
+  <div class="result" id="resultArea" style="display:none;">
+    <div id="resultText"></div>
+    <div class="note" id="noteArea" style="display:none;"></div>
+  </div>
+
+  <script>
+    const DEFAULTS = {
+      long: { tp: 1.0, sl: -0.4 },
+      short: { tp: -1.0, sl: 0.4 }
+    };
+    const DEFAULT_BUDGET = 10000;
+
+    let side = 'long';
+    let fractionMode = false; // 碎股模式状态
+    let userModifiedBudget = false; // 用户是否修改过预算
+    let userModifiedTP = false; // 用户是否修改过止盈百分比
+    let userModifiedSL = false; // 用户是否修改过止损百分比
+
+    const priceInput = document.getElementById('price');
+    const tpInput = document.getElementById('tpPercent');
+    const slInput = document.getElementById('slPercent');
+    const budgetInput = document.getElementById('budget');
+    const applyBtn = document.getElementById('applyBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const resetParamsBtn = document.getElementById('resetParamsBtn');
+    const fractionBtn = document.getElementById('fractionBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const resultArea = document.getElementById('resultArea');
+    const resultText = document.getElementById('resultText');
+    const noteArea = document.getElementById('noteArea');
+    const longBtn = document.getElementById('longBtn');
+    const shortBtn = document.getElementById('shortBtn');
+    const tpWarning = document.getElementById('tpWarning');
+    const slWarning = document.getElementById('slWarning');
+
+    // 初始化默认值
+    function updatePercentDisplays() {
+      const defaults = DEFAULTS[side];
+      
+      // 仅当用户没有修改过时才重置止盈止损百分比
+      if (!userModifiedTP) {
+        tpInput.value = defaults.tp;
+      }
+      if (!userModifiedSL) {
+        slInput.value = defaults.sl;
+      }
+      
+      // 仅当用户没有修改过时才重置预算
+      if (!userModifiedBudget) {
+        budgetInput.value = DEFAULT_BUDGET;
+      }
+      
+      updateButtonState();
+      updateStatusBadge();
+      updateResetParamsButton();
+      validateTPAndSL();
+    }
+
+    // 设置多单/空单模式
+    function setSide(s) {
+      side = s;
+      
+      // 更新按钮激活状态
+      if (side === 'long') {
+        document.body.style.background = 'var(--green-bg)';
+        longBtn.classList.add('active');
+        shortBtn.classList.remove('active');
+      } else {
+        document.body.style.background = 'var(--red-bg)';
+        shortBtn.classList.add('active');
+        longBtn.classList.remove('active');
+      }
+      
+      // 更新参数显示
+      updatePercentDisplays();
+      
+      // 只有在参数未修改时才自动计算
+      if (!checkParamsModified() && parseFloat(priceInput.value) > 0) {
+        calculate();
+      }
+    }
+
+    // 检查参数是否被修改
+    function checkParamsModified() {
+      const defaults = DEFAULTS[side];
+      const tpValue = parseFloat(tpInput.value);
+      const slValue = parseFloat(slInput.value);
+      const budgetValue = parseFloat(budgetInput.value);
+      
+      const isTpModified = tpValue !== defaults.tp;
+      const isSlModified = slValue !== defaults.sl;
+      const isBudgetModified = budgetValue !== DEFAULT_BUDGET;
+      
+      return isTpModified || isSlModified || isBudgetModified || fractionMode;
+    }
+
+    // 检查参数是否回到默认值
+    function checkParamsDefault() {
+      const defaults = DEFAULTS[side];
+      const tpValue = parseFloat(tpInput.value);
+      const slValue = parseFloat(slInput.value);
+      const budgetValue = parseFloat(budgetInput.value);
+      
+      const isTpDefault = tpValue === defaults.tp;
+      const isSlDefault = slValue === defaults.sl;
+      const isBudgetDefault = budgetValue === DEFAULT_BUDGET;
+      
+      return isTpDefault && isSlDefault && isBudgetDefault && !fractionMode;
+    }
+
+    // 更新计算按钮状态
+    function updateButtonState() {
+      const price = parseFloat(priceInput.value);
+      const paramsModified = checkParamsModified();
+      
+      if (isFinite(price) && price > 0 && paramsModified) {
+        applyBtn.classList.remove('btn-disabled');
+        applyBtn.style.opacity = "1";
+        applyBtn.style.cursor = "pointer";
+      } else {
+        applyBtn.classList.add('btn-disabled');
+        applyBtn.style.opacity = "0.6";
+        applyBtn.style.cursor = "not-allowed";
+      }
+    }
+
+    // 更新状态徽章
+    function updateStatusBadge() {
+      const paramsModified = checkParamsModified();
+      
+      if (paramsModified) {
+        statusBadge.innerHTML = '<span class="modified">参数已修改</span>';
+      } else {
+        statusBadge.textContent = '使用默认参数';
+      }
+    }
+    
+    // 更新重置参数按钮状态
+    function updateResetParamsButton() {
+      const defaults = DEFAULTS[side];
+      const tpValue = parseFloat(tpInput.value);
+      const slValue = parseFloat(slInput.value);
+      
+      const isTpModified = tpValue !== defaults.tp;
+      const isSlModified = slValue !== defaults.sl;
+      
+      if (isTpModified || isSlModified) {
+        resetParamsBtn.textContent = '重置止盈止损百分比 (已修改)';
+        resetParamsBtn.classList.add('btn-params-modified');
+      } else {
+        resetParamsBtn.textContent = '重置止盈止损百分比';
+        resetParamsBtn.classList.remove('btn-params-modified');
+      }
+    }
+
+    // 验证止盈止损百分比
+    function validateTPAndSL() {
+      const tpValue = parseFloat(tpInput.value);
+      const slValue = parseFloat(slInput.value);
+      
+      tpWarning.style.display = 'none';
+      slWarning.style.display = 'none';
+      
+      if (isNaN(tpValue) || isNaN(slValue)) return true;
+      
+      // 验证止盈百分比符号
+      if (side === 'long') {
+        // 多单模式：止盈百分比必须为正数
+        if (tpValue <= 0) {
+          tpWarning.textContent = '多单模式下止盈百分比必须为正数';
+          tpWarning.style.display = 'block';
+          return false;
+        }
+      } else {
+        // 空单模式：止盈百分比必须为负数
+        if (tpValue >= 0) {
+          tpWarning.textContent = '空单模式下止盈百分比必须为负数';
+          tpWarning.style.display = 'block';
+          return false;
+        }
+      }
+      
+      // 验证止盈止损百分比关系
+      if (side === 'long') {
+        // 多单模式：止盈百分比必须大于止损百分比
+        if (tpValue <= slValue) {
+          tpWarning.textContent = '止盈百分比必须大于止损百分比';
+          tpWarning.style.display = 'block';
+          slWarning.textContent = '止损百分比必须小于止盈百分比';
+          slWarning.style.display = 'block';
+          return false;
+        }
+      } else {
+        // 空单模式：止盈百分比必须小于止损百分比
+        if (tpValue >= slValue) {
+          tpWarning.textContent = '止盈百分比必须小于止损百分比';
+          tpWarning.style.display = 'block';
+          slWarning.textContent = '止损百分比必须大于止盈百分比';
+          slWarning.style.display = 'block';
+          return false;
+        }
+      }
+      
+      return true;
+    }
+
+    // 计算止盈止损价格和收益
+    function calculate() {
+      const price = parseFloat(priceInput.value);
+      if (!isFinite(price) || price <= 0) {
+        resultArea.style.display = 'none';
+        return;
+      }
+      
+      // 验证止盈止损百分比
+      if (!validateTPAndSL()) {
+        alert('止盈止损百分比设置无效，请检查');
+        return;
+      }
+
+      const tpPercent = parseFloat(tpInput.value) || DEFAULTS[side].tp;
+      const slPercent = parseFloat(slInput.value) || DEFAULTS[side].sl;
+      const budget = parseFloat(budgetInput.value) || DEFAULT_BUDGET;
+
+      const rawTp = price * (1 + tpPercent / 100);
+      const rawSl = price * (1 + slPercent / 100);
+      const adjTp = adjustPrice(rawTp, side);
+      const adjSl = adjustPrice(rawSl, side);
+      
+      // 计算股数（根据碎股模式）
+      let shares;
+      if (fractionMode) {
+        shares = parseFloat((budget / price).toFixed(4)); // 保留4位小数
+      } else {
+        shares = Math.floor(budget / price);
+      }
+
+      // 计算预计收益（止盈时）
+      let profit;
+      if (side === 'long') {
+        profit = shares * (adjTp - price);
+      } else {
+        profit = shares * (price - adjTp);
+      }
+
+      // 计算预计损失（止损时）
+      let loss;
+      if (side === 'long') {
+        loss = shares * (adjSl - price);
+      } else {
+        loss = shares * (price - adjSl);
+      }
+
+      resultArea.style.display = 'block';
+      resultText.innerHTML = `
+        <div class="result-row">
+          <span>方向：</span>
+          <span class="result-value">${side === 'long' ? '多单' : '空单'}</span>
+        </div>
+        <div class="result-row">
+          <span>预算：</span>
+          <span class="result-value">${budget.toFixed(2)}</span>
+        </div>
+        <div class="result-row">
+          <span>可买股数：</span>
+          <span class="result-value">${shares}${fractionMode ? ' (碎股)' : ''}</span>
+        </div>
+        <div class="result-row" style="margin-top:16px;">
+          <span>止盈价格：</span>
+          <div>
+            <span class="result-value">${adjTp}</span>
+            <span class="small">(${roundTo(rawTp)})</span>
+          </div>
+        </div>
+        <div class="result-row">
+          <span>预计收益：</span>
+          <span class="result-value ${profit >= 0 ? 'profit' : 'loss'}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</span>
+        </div>
+        <div class="result-row" style="margin-top:16px;">
+          <span>止损价格：</span>
+          <div>
+            <span class="result-value">${adjSl}</span>
+            <span class="small">(${roundTo(rawSl)})</span>
+          </div>
+        </div>
+        <div class="result-row">
+          <span>预计损失：</span>
+          <span class="result-value ${loss >= 0 ? 'profit' : 'loss'}">${loss >= 0 ? '+' : ''}${loss.toFixed(2)}</span>
+        </div>
+      `;
+
+      // 更新状态徽章
+      const paramsModified = checkParamsModified();
+      if (paramsModified) {
+        noteArea.style.display = 'block';
+        noteArea.textContent = '使用自定义参数计算';
+      } else {
+        noteArea.style.display = 'none';
+      }
+    }
+
+    // 价格调整函数
+    function adjustPrice(raw, side) {
+      const factor = 100;
+      let val;
+      if (side === 'long') {
+        val = Math.ceil(raw * factor) / factor;
+      } else {
+        val = Math.floor(raw * factor) / factor;
+      }
+      return val.toFixed(2);
+    }
+
+    // 四舍五入到指定精度
+    function roundTo(x) { return parseFloat(x.toFixed(8)); }
+
+    // 尝试自动计算（当参数回到默认状态时）
+    function tryAutoCalculate() {
+      const price = parseFloat(priceInput.value);
+      if (isFinite(price) && price > 0 && checkParamsDefault()) {
+        calculate();
+        // 计算后更新按钮状态
+        updateButtonState();
+      }
+    }
+
+    // 重置止盈止损百分比
+    function resetTPAndSL() {
+      const defaults = DEFAULTS[side];
+      tpInput.value = defaults.tp;
+      slInput.value = defaults.sl;
+      userModifiedTP = false;
+      userModifiedSL = false;
+      updateResetParamsButton();
+      updateStatusBadge();
+      validateTPAndSL();
+      
+      // 尝试自动计算（如果参数回到默认状态）
+      tryAutoCalculate();
+      
+      // 更新按钮状态
+      updateButtonState();
+    }
+
+    // 事件监听器
+    longBtn.addEventListener('click', () => setSide('long'));
+    shortBtn.addEventListener('click', () => setSide('short'));
+
+    priceInput.addEventListener('input', () => {
+      // 只有在参数未修改时才自动计算
+      if (!checkParamsModified()) {
+        calculate();
+      }
+      updateButtonState();
+    });
+
+    // 监听参数输入变化
+    tpInput.addEventListener('input', () => {
+      userModifiedTP = true;
+      updateButtonState();
+      updateStatusBadge();
+      updateResetParamsButton();
+      validateTPAndSL();
+      tryAutoCalculate();
+    });
+    
+    slInput.addEventListener('input', () => {
+      userModifiedSL = true;
+      updateButtonState();
+      updateStatusBadge();
+      updateResetParamsButton();
+      validateTPAndSL();
+      tryAutoCalculate();
+    });
+    
+    budgetInput.addEventListener('input', () => {
+      userModifiedBudget = true;
+      updateButtonState();
+      updateStatusBadge();
+      tryAutoCalculate();
+    });
+
+    // 碎股模式按钮
+    fractionBtn.addEventListener('click', () => {
+      fractionMode = !fractionMode;
+      
+      if (fractionMode) {
+        fractionBtn.classList.add('btn-active');
+        fractionBtn.textContent = '碎股模式 (开)';
+      } else {
+        fractionBtn.classList.remove('btn-active');
+        fractionBtn.textContent = '碎股模式 (关)';
+      }
+      
+      // 更新参数状态
+      updateButtonState();
+      updateStatusBadge();
+      
+      // 当关闭碎股模式且参数回到默认值时自动计算
+      tryAutoCalculate();
+    });
+
+    // 重置止盈止损百分比按钮
+    resetParamsBtn.addEventListener('click', resetTPAndSL);
+
+    applyBtn.addEventListener('click', () => {
+      if (applyBtn.classList.contains('btn-disabled')) return;
+      
+      const price = parseFloat(priceInput.value);
+      if (!isFinite(price) || price <= 0) {
+        alert('请输入有效的当前价格');
+        return;
+      }
+      
+      // 验证止盈止损百分比
+      if (!validateTPAndSL()) {
+        alert('止盈止损百分比设置无效，请检查');
+        return;
+      }
+      
+      calculate();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      priceInput.value = '';
+      resultArea.style.display = 'none';
+      
+      // 重置用户修改标记
+      userModifiedBudget = false;
+      userModifiedTP = false;
+      userModifiedSL = false;
+      
+      setSide('long'); // 重置时回到多单模式
+      
+      // 重置碎股模式
+      fractionMode = false;
+      fractionBtn.classList.remove('btn-active');
+      fractionBtn.textContent = '碎股模式';
+      
+      updateButtonState();
+      updateStatusBadge();
+      updateResetParamsButton();
+      validateTPAndSL();
+    });
+
+    // 初始化
+    setSide('long');
+    updatePercentDisplays();
+  </script>
+</body>
+</html>

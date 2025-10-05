@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票持仓可视化工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: fit-content;
+        }
+        
+        .chart-section {
+            flex: 2;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #1a2a6c;
+            border-bottom: 2px solid #fdbb2d;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #1a2a6c;
+            outline: none;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: block;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #555, #777);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(to right, #b21f1f, #d9534f);
+        }
+        
+        .btn-info {
+            background: linear-gradient(to right, #17a2b8, #138496);
+        }
+        
+        .btn-success {
+            background: linear-gradient(to right, #28a745, #218838);
+        }
+        
+        .holdings-list {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .holding-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .holding-item:last-child {
+            border-bottom: none;
+        }
+        
+        .holding-info {
+            flex: 1;
+        }
+        
+        .holding-symbol {
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        .holding-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+        
+        .edit-btn {
+            background: #17a2b8;
+        }
+        
+        .delete-btn {
+            background: #d9534f;
+        }
+        
+        .chart-container {
+            flex: 1;
+            min-height: 400px;
+            position: relative;
+        }
+        
+        .summary {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        
+        .summary-value {
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px 0;
+            color: #777;
+            font-style: italic;
+        }
+        
+        .group-section {
+            margin-top: 25px;
+        }
+        
+        .group-list {
+            margin-top: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .group-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .group-item:last-child {
+            border-bottom: none;
+        }
+        
+        .group-name {
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        .group-stocks {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .color-group-section {
+            margin-top: 25px;
+        }
+        
+        .color-group-list {
+            margin-top: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .color-group-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .color-group-item:last-child {
+            border-bottom: none;
+        }
+        
+        .color-group-name {
+            font-weight: bold;
+        }
+        
+        .color-group-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .data-io-section {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .data-textarea {
+            height: 120px;
+            margin-bottom: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .modal-title {
+            font-size: 1.4rem;
+            color: #1a2a6c;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+        }
+        
+        .view-toggle {
+            display: flex;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+        
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .toggle-btn.active {
+            background: #1a2a6c;
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            padding: 15px;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .chart-section {
+                height: 60vh;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .view-toggle {
+                flex-direction: column;
+            }
+            
+            .chart-section {
+                height: 50vh;
+            }
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #1a2a6c;
+            color: #1a2a6c;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .color-preview {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-left: 10px;
+            vertical-align: middle;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>股票持仓可视化工具</h1>
+            <p class="subtitle">添加您的持仓数据，生成饼图展示</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="input-section">
+                <div class="tabs">
+                    <div class="tab active" data-tab="holdings">持仓管理</div>
+                    <div class="tab" data-tab="groups">分组管理</div>
+                    <div class="tab" data-tab="color-groups">颜色分组</div>
+                    <div class="tab" data-tab="data-io">数据导入导出</div>
+                </div>
+                
+                <div class="tab-content active" id="holdings-tab">
+                    <h2 class="section-title">添加持仓</h2>
+                    <div class="form-group">
+                        <label for="stockSymbol">股票名称/代码</label>
+                        <input type="text" id="stockSymbol" placeholder="例如：AAPL" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="value">持仓市值 (USD)</label>
+                        <input type="number" id="value" placeholder="例如：15000.00" step="0.01" min="0.01" required>
+                    </div>
+                    
+                    <button id="addBtn" class="btn">添加持仓</button>
+                    <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
+                    
+                    <h2 class="section-title" style="margin-top: 20px;">我的持仓</h2>
+                    <div class="holdings-list" id="holdingsList">
+                        <!-- 持仓列表将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="groups-tab">
+                    <h2 class="section-title">添加分组</h2>
+                    <div class="form-group">
+                        <label for="groupName">分组名称</label>
+                        <input type="text" id="groupName" placeholder="例如：科技股">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="groupColor">分组颜色</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="color" id="groupColor" value="#1a2a6c">
+                            <span class="color-preview" id="groupColorPreview" style="background-color: #1a2a6c;"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="groupStocks">选择股票</label>
+                        <select id="groupStocks" multiple style="height: 100px;">
+                            <!-- 股票选项将通过JS动态生成 -->
+                        </select>
+                    </div>
+                    
+                    <button id="addGroupBtn" class="btn btn-info">添加分组</button>
+                    
+                    <h2 class="section-title" style="margin-top: 20px;">我的分组</h2>
+                    <div class="group-list" id="groupList">
+                        <!-- 分组列表将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="color-groups-tab">
+                    <h2 class="section-title">添加颜色分组</h2>
+                    <div class="form-group">
+                        <label for="colorGroupName">颜色分组名称</label>
+                        <input type="text" id="colorGroupName" placeholder="例如：黄金分组">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="colorGroupColor">分组颜色</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="color" id="colorGroupColor" value="#FFD700">
+                            <span class="color-preview" id="colorGroupColorPreview" style="background-color: #FFD700;"></span>
+                        </div>
+                    </div>
+                    
+                    <button id="addColorGroupBtn" class="btn btn-info">添加颜色分组</button>
+                    
+                    <h2 class="section-title" style="margin-top: 20px;">我的颜色分组</h2>
+                    <div class="color-group-list" id="colorGroupList">
+                        <!-- 颜色分组列表将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="data-io-tab">
+                    <h2 class="section-title">数据导入导出</h2>
+                    <div class="form-group">
+                        <label for="exportData">导出数据</label>
+                        <textarea id="exportData" class="data-textarea" readonly></textarea>
+                        <button id="copyDataBtn" class="btn btn-success">复制数据</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="importData">导入数据</label>
+                        <textarea id="importData" class="data-textarea" placeholder="粘贴导出的数据"></textarea>
+                        <button id="importBtn" class="btn btn-info">导入数据</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                <div class="view-toggle">
+                    <button id="stockViewBtn" class="toggle-btn active">按股票查看</button>
+                    <button id="groupViewBtn" class="toggle-btn">按分组查看</button>
+                </div>
+                
+                <h2 class="section-title">持仓分布</h2>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                
+                <div class="summary">
+                    <div class="summary-item">
+                        <span>总持仓价值:</span>
+                        <span id="totalValue" class="summary-value">$0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>持仓股票数量:</span>
+                        <span id="stockCount" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>分组数量:</span>
+                        <span id="groupCount" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>颜色分组数量:</span>
+                        <span id="colorGroupCount" class="summary-value">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 编辑持仓模态框 -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">编辑持仓</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label for="editSymbol">股票名称/代码</label>
+                    <input type="text" id="editSymbol" required>
+                </div>
+                <div class="form-group">
+                    <label for="editValue">持仓市值 (USD)</label>
+                    <input type="number" id="editValue" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="editColorGroup">颜色分组</label>
+                    <select id="editColorGroup">
+                        <option value="">无</option>
+                        <!-- 颜色分组选项将通过JS动态生成 -->
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveEditBtn" class="btn modal-btn">保存修改</button>
+                    <button id="cancelEditBtn" class="btn btn-secondary modal-btn">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 编辑分组模态框 -->
+        <div id="editGroupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">编辑分组</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label for="editGroupName">分组名称</label>
+                    <input type="text" id="editGroupName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editGroupColor">分组颜色</label>
+                    <div style="display: flex; align-items: center;">
+                        <input type="color" id="editGroupColor" value="#1a2a6c">
+                        <span class="color-preview" id="editGroupColorPreview" style="background-color: #1a2a6c;"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editGroupStocks">选择股票</label>
+                    <select id="editGroupStocks" multiple style="height: 200px;">
+                        <!-- 股票选项将通过JS动态生成 -->
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveGroupEditBtn" class="btn modal-btn">保存修改</button>
+                    <button id="cancelGroupEditBtn" class="btn btn-secondary modal-btn">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 编辑颜色分组模态框 -->
+        <div id="editColorGroupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">编辑颜色分组</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label for="editColorGroupName">颜色分组名称</label>
+                    <input type="text" id="editColorGroupName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editColorGroupColor">分组颜色</label>
+                    <div style="display: flex; align-items: center;">
+                        <input type="color" id="editColorGroupColor" value="#FFD700">
+                        <span class="color-preview" id="editColorGroupColorPreview" style="background-color: #FFD700;"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveColorGroupEditBtn" class="btn modal-btn">保存修改</button>
+                    <button id="cancelColorGroupEditBtn" class="btn btn-secondary modal-btn">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
+        </footer>
+    </div>
+
+    <script>
+        // 从localStorage加载持仓数据和分组数据
+        let holdings = JSON.parse(localStorage.getItem('stockHoldings')) || [];
+        let groups = JSON.parse(localStorage.getItem('stockGroups')) || [];
+        let colorGroups = JSON.parse(localStorage.getItem('colorGroups')) || [];
+        let pieChart = null;
+        let currentView = 'stock'; // 'stock' 或 'group'
+        let editingIndex = -1; // 当前编辑的持仓索引
+        let editingGroupIndex = -1; // 当前编辑的分组索引
+        let editingColorGroupIndex = -1; // 当前编辑的颜色分组索引
+        
+        // DOM元素
+        const stockSymbolInput = document.getElementById('stockSymbol');
+        const valueInput = document.getElementById('value');
+        const addBtn = document.getElementById('addBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const holdingsList = document.getElementById('holdingsList');
+        const pieChartCanvas = document.getElementById('pieChart');
+        const totalValueEl = document.getElementById('totalValue');
+        const stockCountEl = document.getElementById('stockCount');
+        const groupCountEl = document.getElementById('groupCount');
+        const colorGroupCountEl = document.getElementById('colorGroupCount');
+        const groupNameInput = document.getElementById('groupName');
+        const groupColorInput = document.getElementById('groupColor');
+        const groupColorPreview = document.getElementById('groupColorPreview');
+        const groupStocksSelect = document.getElementById('groupStocks');
+        const addGroupBtn = document.getElementById('addGroupBtn');
+        const groupList = document.getElementById('groupList');
+        const colorGroupNameInput = document.getElementById('colorGroupName');
+        const colorGroupColorInput = document.getElementById('colorGroupColor');
+        const colorGroupColorPreview = document.getElementById('colorGroupColorPreview');
+        const addColorGroupBtn = document.getElementById('addColorGroupBtn');
+        const colorGroupList = document.getElementById('colorGroupList');
+        const exportDataTextarea = document.getElementById('exportData');
+        const copyDataBtn = document.getElementById('copyDataBtn');
+        const importDataTextarea = document.getElementById('importData');
+        const importBtn = document.getElementById('importBtn');
+        const editModal = document.getElementById('editModal');
+        const editSymbolInput = document.getElementById('editSymbol');
+        const editValueInput = document.getElementById('editValue');
+        const editColorGroupSelect = document.getElementById('editColorGroup');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const closeModalBtn = document.querySelector('.close-modal');
+        const stockViewBtn = document.getElementById('stockViewBtn');
+        const groupViewBtn = document.getElementById('groupViewBtn');
+        const editGroupModal = document.getElementById('editGroupModal');
+        const editGroupNameInput = document.getElementById('editGroupName');
+        const editGroupColorInput = document.getElementById('editGroupColor');
+        const editGroupColorPreview = document.getElementById('editGroupColorPreview');
+        const editGroupStocksSelect = document.getElementById('editGroupStocks');
+        const saveGroupEditBtn = document.getElementById('saveGroupEditBtn');
+        const cancelGroupEditBtn = document.getElementById('cancelGroupEditBtn');
+        const editColorGroupModal = document.getElementById('editColorGroupModal');
+        const editColorGroupNameInput = document.getElementById('editColorGroupName');
+        const editColorGroupColorInput = document.getElementById('editColorGroupColor');
+        const editColorGroupColorPreview = document.getElementById('editColorGroupColorPreview');
+        const saveColorGroupEditBtn = document.getElementById('saveColorGroupEditBtn');
+        const cancelColorGroupEditBtn = document.getElementById('cancelColorGroupEditBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderHoldingsList();
+            renderGroupList();
+            renderColorGroupList();
+            updateGroupStocksSelect();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 设置视图切换按钮事件
+            stockViewBtn.addEventListener('click', function() {
+                currentView = 'stock';
+                updateActiveViewButtons();
+                updateChart();
+            });
+            
+            groupViewBtn.addEventListener('click', function() {
+                currentView = 'group';
+                updateActiveViewButtons();
+                updateChart();
+            });
+            
+            // 设置标签切换事件
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 移除所有active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    // 添加active类到当前标签
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+            
+            // 设置颜色输入事件监听器
+            groupColorInput.addEventListener('input', function() {
+                groupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            colorGroupColorInput.addEventListener('input', function() {
+                colorGroupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            editGroupColorInput.addEventListener('input', function() {
+                editGroupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            editColorGroupColorInput.addEventListener('input', function() {
+                editColorGroupColorPreview.style.backgroundColor = this.value;
+            });
+            
+            // 数据导出按钮
+            copyDataBtn.addEventListener('click', function() {
+                exportDataTextarea.select();
+                document.execCommand('copy');
+                alert('数据已复制到剪贴板');
+            });
+            
+            // 数据导入按钮
+            importBtn.addEventListener('click', function() {
+                const data = importDataTextarea.value.trim();
+                if (!data) {
+                    alert('请粘贴导出的数据');
+                    return;
+                }
+                
+                try {
+                    const parsedData = JSON.parse(data);
+                    holdings = parsedData.holdings || [];
+                    groups = parsedData.groups || [];
+                    colorGroups = parsedData.colorGroups || [];
+                    
+                    saveHoldings();
+                    saveGroups();
+                    saveColorGroups();
+                    
+                    renderHoldingsList();
+                    renderGroupList();
+                    renderColorGroupList();
+                    updateGroupStocksSelect();
+                    updateChart();
+                    updateSummary();
+                    updateExportData();
+                    
+                    alert('数据导入成功！');
+                } catch (e) {
+                    alert('数据格式错误，请检查导入的数据');
+                    console.error(e);
+                }
+            });
+        });
+        
+        // 更新活动视图按钮样式
+        function updateActiveViewButtons() {
+            stockViewBtn.classList.toggle('active', currentView === 'stock');
+            groupViewBtn.classList.toggle('active', currentView === 'group');
+        }
+        
+        // 添加持仓
+        addBtn.addEventListener('click', function() {
+            const symbol = stockSymbolInput.value.trim().toUpperCase();
+            const value = parseFloat(valueInput.value);
+            
+            if (!symbol || isNaN(value) || value <= 0) {
+                alert('请填写所有字段并确保数值有效');
+                return;
+            }
+            
+            // 检查是否已存在相同名称的持仓
+            const existingIndex = holdings.findIndex(h => h.symbol === symbol);
+            if (existingIndex !== -1) {
+                // 更新现有持仓
+                holdings[existingIndex].value += value;
+            } else {
+                // 添加新持仓
+                holdings.push({
+                    symbol,
+                    value
+                });
+            }
+            
+            // 保存到localStorage
+            saveHoldings();
+            
+            // 更新UI
+            renderHoldingsList();
+            updateGroupStocksSelect();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 清空表单
+            stockSymbolInput.value = '';
+            valueInput.value = '';
+            stockSymbolInput.focus();
+        });
+        
+        // 清除所有持仓
+        clearBtn.addEventListener('click', function() {
+            if (confirm('确定要清除所有持仓数据吗？此操作不可撤销。')) {
+                holdings = [];
+                groups = [];
+                colorGroups = [];
+                saveHoldings();
+                saveGroups();
+                saveColorGroups();
+                renderHoldingsList();
+                renderGroupList();
+                renderColorGroupList();
+                updateGroupStocksSelect();
+                updateChart();
+                updateSummary();
+                updateExportData();
+            }
+        });
+        
+        // 添加分组
+        addGroupBtn.addEventListener('click', function() {
+            const name = groupNameInput.value.trim();
+            const color = groupColorInput.value;
+            const selectedStocks = Array.from(groupStocksSelect.selectedOptions).map(option => option.value);
+            
+            if (!name) {
+                alert('请输入分组名称');
+                return;
+            }
+            
+            // 检查分组名称是否唯一
+            if (groups.some(group => group.name === name)) {
+                alert('分组名称已存在');
+                return;
+            }
+            
+            // 添加新分组
+            groups.push({
+                id: generateId(),
+                name,
+                color,
+                stocks: selectedStocks
+            });
+            
+            // 保存到localStorage
+            saveGroups();
+            
+            // 更新UI
+            renderGroupList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 清空表单
+            groupNameInput.value = '';
+            groupColorInput.value = '#1a2a6c';
+            groupColorPreview.style.backgroundColor = '#1a2a6c';
+            groupStocksSelect.selectedIndex = -1;
+        });
+        
+        // 添加颜色分组
+        addColorGroupBtn.addEventListener('click', function() {
+            const name = colorGroupNameInput.value.trim();
+            const color = colorGroupColorInput.value;
+            
+            if (!name) {
+                alert('请输入颜色分组名称');
+                return;
+            }
+            
+            // 检查颜色分组名称是否唯一
+            if (colorGroups.some(group => group.name === name)) {
+                alert('颜色分组名称已存在');
+                return;
+            }
+            
+            // 添加新颜色分组
+            colorGroups.push({
+                id: generateId(),
+                name,
+                color
+            });
+            
+            // 保存到localStorage
+            saveColorGroups();
+            
+            // 更新UI
+            renderColorGroupList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 清空表单
+            colorGroupNameInput.value = '';
+            colorGroupColorInput.value = '#FFD700';
+            colorGroupColorPreview.style.backgroundColor = '#FFD700';
+        });
+        
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // 保存持仓到localStorage
+        function saveHoldings() {
+            localStorage.setItem('stockHoldings', JSON.stringify(holdings));
+        }
+        
+        // 保存分组到localStorage
+        function saveGroups() {
+            localStorage.setItem('stockGroups', JSON.stringify(groups));
+        }
+        
+        // 保存颜色分组到localStorage
+        function saveColorGroups() {
+            localStorage.setItem('colorGroups', JSON.stringify(colorGroups));
+        }
+        
+        // 渲染持仓列表（按持仓市值降序排序）
+        function renderHoldingsList() {
+            holdingsList.innerHTML = '';
+            
+            if (holdings.length === 0) {
+                holdingsList.innerHTML = '<div class="no-data">暂无持仓数据</div>';
+                return;
+            }
+            
+            // 按持仓市值降序排序
+            const sortedHoldings = [...holdings].sort((a, b) => b.value - a.value);
+            
+            sortedHoldings.forEach((holding, index) => {
+                const holdingEl = document.createElement('div');
+                holdingEl.className = 'holding-item';
+                
+                // 获取颜色分组信息
+                let colorGroupInfo = '';
+                if (holding.colorGroup) {
+                    const colorGroup = colorGroups.find(cg => cg.id === holding.colorGroup);
+                    if (colorGroup) {
+                        colorGroupInfo = `<div style="color: ${colorGroup.color}">${colorGroup.name}</div>`;
+                    }
+                }
+                
+                holdingEl.innerHTML = `
+                    <div class="holding-info">
+                        <div class="holding-symbol">${holding.symbol}</div>
+                        <div class="holding-details">$${holding.value.toFixed(2)}</div>
+                        ${colorGroupInfo}
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn edit-holding-btn" data-index="${holdings.indexOf(holding)}">✏️</button>
+                        <button class="action-btn delete-holding-btn" data-index="${holdings.indexOf(holding)}">×</button>
+                    </div>
+                `;
+                holdingsList.appendChild(holdingEl);
+            });
+            
+            // 添加删除事件监听器
+            document.querySelectorAll('.delete-holding-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    holdings.splice(index, 1);
+                    saveHoldings();
+                    renderHoldingsList();
+                    updateGroupStocksSelect();
+                    updateChart();
+                    updateSummary();
+                    updateExportData();
+                });
+            });
+            
+            // 添加编辑事件监听器
+            document.querySelectorAll('.edit-holding-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditModal(index);
+                });
+            });
+        }
+        
+        // 渲染分组列表（按分组价值降序排序）
+        function renderGroupList() {
+            groupList.innerHTML = '';
+            
+            if (groups.length === 0) {
+                groupList.innerHTML = '<div class="no-data">暂无分组数据</div>';
+                return;
+            }
+            
+            // 按分组价值降序排序
+            const sortedGroups = [...groups].sort((a, b) => {
+                const aValue = calculateGroupValue(a);
+                const bValue = calculateGroupValue(b);
+                return bValue - aValue;
+            });
+            
+            sortedGroups.forEach((group, index) => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'group-item';
+                
+                // 获取分组中的股票名称
+                const stockNames = group.stocks.map(symbol => {
+                    const holding = holdings.find(h => h.symbol === symbol);
+                    return holding ? holding.symbol : symbol;
+                }).join(', ');
+                
+                groupEl.innerHTML = `
+                    <div>
+                        <div class="group-name" style="color: ${group.color}">${group.name}</div>
+                        <div class="group-stocks">${stockNames}</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn edit-group-btn" data-index="${groups.indexOf(group)}">✏️</button>
+                        <button class="action-btn delete-group-btn" data-index="${groups.indexOf(group)}">×</button>
+                    </div>
+                `;
+                groupList.appendChild(groupEl);
+            });
+            
+            // 添加删除事件监听器
+            document.querySelectorAll('.delete-group-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    groups.splice(index, 1);
+                    saveGroups();
+                    renderGroupList();
+                    updateChart();
+                    updateSummary();
+                    updateExportData();
+                });
+            });
+            
+            // 添加编辑事件监听器
+            document.querySelectorAll('.edit-group-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditGroupModal(index);
+                });
+            });
+        }
+        
+        // 渲染颜色分组列表
+        function renderColorGroupList() {
+            colorGroupList.innerHTML = '';
+            
+            if (colorGroups.length === 0) {
+                colorGroupList.innerHTML = '<div class="no-data">暂无颜色分组数据</div>';
+                return;
+            }
+            
+            colorGroups.forEach((group, index) => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'color-group-item';
+                
+                groupEl.innerHTML = `
+                    <div>
+                        <div class="color-group-name">
+                            <span class="color-group-color" style="background-color: ${group.color}"></span>
+                            ${group.name}
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn edit-color-group-btn" data-index="${index}">✏️</button>
+                        <button class="action-btn delete-color-group-btn" data-index="${index}">×</button>
+                    </div>
+                `;
+                colorGroupList.appendChild(groupEl);
+            });
+            
+            // 添加删除事件监听器
+            document.querySelectorAll('.delete-color-group-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    colorGroups.splice(index, 1);
+                    saveColorGroups();
+                    renderColorGroupList();
+                    updateChart();
+                    updateSummary();
+                    updateExportData();
+                });
+            });
+            
+            // 添加编辑事件监听器
+            document.querySelectorAll('.edit-color-group-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditColorGroupModal(index);
+                });
+            });
+        }
+        
+        // 更新分组选择框中的股票选项
+        function updateGroupStocksSelect() {
+            groupStocksSelect.innerHTML = '';
+            editGroupStocksSelect.innerHTML = '';
+            
+            holdings.forEach(holding => {
+                const option = document.createElement('option');
+                option.value = holding.symbol;
+                option.textContent = `${holding.symbol} ($${holding.value.toFixed(2)})`;
+                groupStocksSelect.appendChild(option);
+                editGroupStocksSelect.appendChild(option.cloneNode(true));
+            });
+        }
+        
+        // 打开编辑持仓模态框
+        function openEditModal(index) {
+            editingIndex = index;
+            const holding = holdings[index];
+            
+            editSymbolInput.value = holding.symbol;
+            editValueInput.value = holding.value;
+            
+            // 更新颜色分组选择框
+            editColorGroupSelect.innerHTML = '<option value="">无</option>';
+            colorGroups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = group.name;
+                option.selected = holding.colorGroup === group.id;
+                editColorGroupSelect.appendChild(option);
+            });
+            
+            editModal.style.display = 'flex';
+        }
+        
+        // 关闭编辑持仓模态框
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            editingIndex = -1;
+        }
+        
+        // 打开编辑分组模态框
+        function openEditGroupModal(index) {
+            editingGroupIndex = index;
+            const group = groups[index];
+            
+            editGroupNameInput.value = group.name;
+            editGroupColorInput.value = group.color;
+            editGroupColorPreview.style.backgroundColor = group.color;
+            
+            // 设置选中的股票
+            Array.from(editGroupStocksSelect.options).forEach(option => {
+                option.selected = group.stocks.includes(option.value);
+            });
+            
+            editGroupModal.style.display = 'flex';
+        }
+        
+        // 关闭编辑分组模态框
+        function closeEditGroupModal() {
+            editGroupModal.style.display = 'none';
+            editingGroupIndex = -1;
+        }
+        
+        // 打开编辑颜色分组模态框
+        function openEditColorGroupModal(index) {
+            editingColorGroupIndex = index;
+            const group = colorGroups[index];
+            
+            editColorGroupNameInput.value = group.name;
+            editColorGroupColorInput.value = group.color;
+            editColorGroupColorPreview.style.backgroundColor = group.color;
+            
+            editColorGroupModal.style.display = 'flex';
+        }
+        
+        // 关闭编辑颜色分组模态框
+        function closeEditColorGroupModal() {
+            editColorGroupModal.style.display = 'none';
+            editingColorGroupIndex = -1;
+        }
+        
+        // 保存持仓编辑
+        saveEditBtn.addEventListener('click', function() {
+            const symbol = editSymbolInput.value.trim().toUpperCase();
+            const value = parseFloat(editValueInput.value);
+            const colorGroup = editColorGroupSelect.value;
+            
+            if (!symbol || isNaN(value) || value <= 0) {
+                alert('请填写所有字段并确保数值有效');
+                return;
+            }
+            
+            // 更新持仓数据
+            holdings[editingIndex] = {
+                symbol,
+                value,
+                colorGroup
+            };
+            
+            // 保存到localStorage
+            saveHoldings();
+            
+            // 更新UI
+            renderHoldingsList();
+            updateGroupStocksSelect();
+            renderGroupList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 关闭模态框
+            closeEditModal();
+        });
+        
+        // 保存分组编辑
+        saveGroupEditBtn.addEventListener('click', function() {
+            const name = editGroupNameInput.value.trim();
+            const color = editGroupColorInput.value;
+            const selectedStocks = Array.from(editGroupStocksSelect.selectedOptions).map(option => option.value);
+            
+            if (!name) {
+                alert('请输入分组名称');
+                return;
+            }
+            
+            // 检查分组名称是否唯一（排除自身）
+            if (groups.some((group, index) => group.name === name && index !== editingGroupIndex)) {
+                alert('分组名称已存在');
+                return;
+            }
+            
+            // 更新分组数据
+            groups[editingGroupIndex] = {
+                ...groups[editingGroupIndex],
+                name,
+                color,
+                stocks: selectedStocks
+            };
+            
+            // 保存到localStorage
+            saveGroups();
+            
+            // 更新UI
+            renderGroupList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 关闭模态框
+            closeEditGroupModal();
+        });
+        
+        // 保存颜色分组编辑
+        saveColorGroupEditBtn.addEventListener('click', function() {
+            const name = editColorGroupNameInput.value.trim();
+            const color = editColorGroupColorInput.value;
+            
+            if (!name) {
+                alert('请输入颜色分组名称');
+                return;
+            }
+            
+            // 检查颜色分组名称是否唯一（排除自身）
+            if (colorGroups.some((group, index) => group.name === name && index !== editingColorGroupIndex)) {
+                alert('颜色分组名称已存在');
+                return;
+            }
+            
+            // 更新颜色分组数据
+            colorGroups[editingColorGroupIndex] = {
+                ...colorGroups[editingColorGroupIndex],
+                name,
+                color
+            };
+            
+            // 保存到localStorage
+            saveColorGroups();
+            
+            // 更新UI
+            renderColorGroupList();
+            renderHoldingsList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 关闭模态框
+            closeEditColorGroupModal();
+        });
+        
+        // 取消编辑
+        cancelEditBtn.addEventListener('click', closeEditModal);
+        cancelGroupEditBtn.addEventListener('click', closeEditGroupModal);
+        cancelColorGroupEditBtn.addEventListener('click', closeEditColorGroupModal);
+        closeModalBtn.addEventListener('click', closeEditModal);
+        
+        // 点击模态框外部关闭
+        window.addEventListener('click', function(event) {
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === editGroupModal) {
+                closeEditGroupModal();
+            }
+            if (event.target === editColorGroupModal) {
+                closeEditColorGroupModal();
+            }
+        });
+        
+        // 更新饼图（添加排序）
+        function updateChart() {
+            const ctx = pieChartCanvas.getContext('2d');
+            
+            if (pieChart) {
+                pieChart.destroy();
+            }
+            
+            if (holdings.length === 0) {
+                // 没有数据时显示提示
+                ctx.fillStyle = '#777';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('暂无持仓数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
+                return;
+            }
+            
+            // 准备图表数据
+            let labels, datasets;
+            
+            if (currentView === 'stock') {
+                // 按股票显示 - 按持仓市值降序排序
+                const sortedHoldings = [...holdings].sort((a, b) => b.value - a.value);
+                labels = sortedHoldings.map(h => h.symbol);
+                const values = sortedHoldings.map(h => h.value);
+                const backgroundColors = sortedHoldings.map(h => getStockColor(h));
+                
+                pieChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: getChartOptions('股票持仓分布')
+                });
+            } 
+            else if (currentView === 'group') {
+                // 按分组显示 - 按分组价值降序排序
+                if (groups.length === 0) {
+                    ctx.fillStyle = '#777';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('暂无分组数据', pieChartCanvas.width/2, pieChartCanvas.height/2);
+                    return;
+                }
+                
+                // 准备分组数据
+                const groupData = [];
+                
+                // 添加分组数据
+                groups.forEach(group => {
+                    const groupValue = calculateGroupValue(group);
+                    if (groupValue > 0) {
+                        groupData.push({
+                            label: group.name,
+                            value: groupValue,
+                            color: group.color,
+                            isGroup: true
+                        });
+                    }
+                });
+                
+                // 添加未分组股票（每个股票单独显示）
+                const ungroupedStocks = holdings.filter(holding => {
+                    return !groups.some(group => group.stocks.includes(holding.symbol));
+                });
+                
+                ungroupedStocks.forEach(stock => {
+                    groupData.push({
+                        label: stock.symbol,
+                        value: stock.value,
+                        color: getStockColor(stock),
+                        isGroup: false
+                    });
+                });
+                
+                // 按价值降序排序
+                groupData.sort((a, b) => b.value - a.value);
+                
+                const groupLabels = groupData.map(item => item.label);
+                const groupValues = groupData.map(item => item.value);
+                const groupColors = groupData.map(item => item.color);
+                
+                pieChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: groupLabels,
+                        datasets: [{
+                            data: groupValues,
+                            backgroundColor: groupColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: getChartOptions('分组持仓分布')
+                });
+            }
+        }
+        
+        // 获取股票颜色
+        function getStockColor(stock) {
+            // 如果股票有颜色分组，使用颜色分组的颜色
+            if (stock.colorGroup) {
+                const colorGroup = colorGroups.find(cg => cg.id === stock.colorGroup);
+                if (colorGroup) {
+                    return colorGroup.color;
+                }
+            }
+            
+            // 如果股票属于某个分组，使用分组颜色的浅色变体
+            const group = groups.find(g => g.stocks.includes(stock.symbol));
+            if (group && group.color) {
+                return lightenColor(group.color, 30);
+            }
+            
+            // 否则使用自动生成的颜色
+            const index = holdings.findIndex(h => h.symbol === stock.symbol);
+            return generateColor(index, holdings.length);
+        }
+        
+        // 计算分组价值
+        function calculateGroupValue(group) {
+            let value = 0;
+            
+            // 计算分组内股票的价值
+            group.stocks.forEach(symbol => {
+                const holding = holdings.find(h => h.symbol === symbol);
+                if (holding) {
+                    value += holding.value;
+                }
+            });
+            
+            return value;
+        }
+        
+        // 获取图表配置选项
+        function getChartOptions(title) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: title,
+                        font: {
+                            size: 18
+                        }
+                    },
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: {
+                                size: 14
+                            },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed;
+                                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${context.label}: $${value.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        // 生成随机颜色
+        function generateColor(index, total) {
+            const hue = (index * 360) / total;
+            return `hsl(${hue}, 70%, 60%)`;
+        }
+        
+        // 颜色变浅函数
+        function lightenColor(color, percent) {
+            // 处理十六进制颜色
+            if (color.startsWith('#')) {
+                let r = parseInt(color.substring(1, 3), 16);
+                let g = parseInt(color.substring(3, 5), 16);
+                let b = parseInt(color.substring(5, 7), 16);
+                
+                r = Math.min(255, r + (255 - r) * percent / 100);
+                g = Math.min(255, g + (255 - g) * percent / 100);
+                b = Math.min(255, b + (255 - b) * percent / 100);
+                
+                return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`;
+            }
+            
+            // 处理HSL颜色
+            if (color.startsWith('hsl')) {
+                const match = color.match(/hsl\((\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
+                if (match) {
+                    const h = parseInt(match[1]);
+                    const s = parseFloat(match[2]);
+                    let l = parseFloat(match[3]);
+                    
+                    l = Math.min(100, l + (100 - l) * percent / 100);
+                    
+                    return `hsl(${h}, ${s}%, ${l}%)`;
+                }
+            }
+            
+            return color; // 无法处理则返回原色
+        }
+        
+        // 更新摘要信息
+        function updateSummary() {
+            const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
+            const stockCount = holdings.length;
+            const groupCount = groups.length;
+            const colorGroupCount = colorGroups.length;
+            
+            totalValueEl.textContent = `$${totalValue.toFixed(2)}`;
+            stockCountEl.textContent = stockCount;
+            groupCountEl.textContent = groupCount;
+            colorGroupCountEl.textContent = colorGroupCount;
+        }
+        
+        // 更新导出数据
+        function updateExportData() {
+            const data = {
+                holdings: holdings,
+                groups: groups,
+                colorGroups: colorGroups
+            };
+            exportDataTextarea.value = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
