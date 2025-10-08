@@ -498,6 +498,17 @@
             color: #1a2a6c;
             font-weight: bold;
         }
+        
+        /* 现金持仓特殊样式 */
+        .cash-holding {
+            background-color: #f0f8ff;
+            border-left: 4px solid #1a2a6c;
+        }
+        
+        .cash-label {
+            color: #1a2a6c;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -518,17 +529,25 @@
                 
                 <div class="tab-content active" id="holdings-tab">
                     <h2 class="section-title">添加持仓</h2>
+                    
+                    <!-- 添加现金持仓的表单 -->
                     <div class="form-group">
+                        <label for="cashAmount">现金金额</label>
+                        <input type="number" id="cashAmount" placeholder="例如：10000" step="0.01" min="0.01">
+                    </div>
+                    <button id="addCashBtn" class="btn btn-success">添加现金</button>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
                         <label for="stockSymbol">股票名称/代码</label>
-                        <input type="text" id="stockSymbol" placeholder="例如：AAPL" required>
+                        <input type="text" id="stockSymbol" placeholder="例如：AAPL">
                     </div>
                     
                     <div class="form-group">
                         <label for="shares">股数</label>
-                        <input type="number" id="shares" placeholder="例如：100" step="0.0001" min="0.0001" required>
+                        <input type="number" id="shares" placeholder="例如：100" step="0.0001" min="0.0001">
                     </div>
                     
-                    <button id="addBtn" class="btn">添加持仓</button>
+                    <button id="addBtn" class="btn">添加股票</button>
                     <button id="clearBtn" class="btn btn-danger">清除所有持仓</button>
                     <button id="updatePricesBtn" class="btn btn-info update-prices-btn">更新所有股价</button>
                     
@@ -628,6 +647,10 @@
                         <span id="stockCount" class="summary-value">0</span>
                     </div>
                     <div class="summary-item">
+                        <span>现金金额:</span>
+                        <span id="cashAmountValue" class="summary-value">$0.00</span>
+                    </div>
+                    <div class="summary-item">
                         <span>分组数量:</span>
                         <span id="groupCount" class="summary-value">0</span>
                     </div>
@@ -664,6 +687,24 @@
                 <div class="modal-footer">
                     <button id="saveEditBtn" class="btn modal-btn">保存修改</button>
                     <button id="cancelEditBtn" class="btn btn-secondary modal-btn">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 编辑现金持仓模态框 -->
+        <div id="editCashModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">编辑现金持仓</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label for="editCashAmount">现金金额</label>
+                    <input type="number" id="editCashAmount" step="0.01" min="0.01" required>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveCashEditBtn" class="btn modal-btn">保存修改</button>
+                    <button id="cancelCashEditBtn" class="btn btn-secondary modal-btn">取消</button>
                 </div>
             </div>
         </div>
@@ -726,7 +767,7 @@
         
         <footer>
             <p>© 2025 股票持仓可视化工具 | 数据保存在您的浏览器本地存储中</p>
-			<p>最后更新时间: <span id="lastUpdate">--</span></p>
+            <p>最后更新时间: <span id="lastUpdate">--</span></p>
         </footer>
     </div>
 
@@ -747,6 +788,8 @@
         const API_BASE_URL = 'https://finnhub.io/api/v1/quote';
         
         // DOM元素
+        const cashAmountInput = document.getElementById('cashAmount');
+        const addCashBtn = document.getElementById('addCashBtn');
         const stockSymbolInput = document.getElementById('stockSymbol');
         const sharesInput = document.getElementById('shares');
         const addBtn = document.getElementById('addBtn');
@@ -757,6 +800,7 @@
         const pieChartCanvas = document.getElementById('pieChart');
         const totalValueEl = document.getElementById('totalValue');
         const stockCountEl = document.getElementById('stockCount');
+        const cashAmountValueEl = document.getElementById('cashAmountValue');
         const groupCountEl = document.getElementById('groupCount');
         const colorGroupCountEl = document.getElementById('colorGroupCount');
         const groupNameInput = document.getElementById('groupName');
@@ -781,7 +825,7 @@
         const editColorGroupSelect = document.getElementById('editColorGroup');
         const saveEditBtn = document.getElementById('saveEditBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const closeModalBtn = document.querySelector('.close-modal');
+        const closeModalBtn = document.querySelectorAll('.close-modal');
         const stockViewBtn = document.getElementById('stockViewBtn');
         const groupViewBtn = document.getElementById('groupViewBtn');
         const editGroupModal = document.getElementById('editGroupModal');
@@ -799,6 +843,10 @@
         const cancelColorGroupEditBtn = document.getElementById('cancelColorGroupEditBtn');
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
+        const editCashModal = document.getElementById('editCashModal');
+        const editCashAmountInput = document.getElementById('editCashAmount');
+        const saveCashEditBtn = document.getElementById('saveCashEditBtn');
+        const cancelCashEditBtn = document.getElementById('cancelCashEditBtn');
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -906,6 +954,47 @@
             updatePricesBtn.addEventListener('click', function() {
                 updateAllStockPrices();
             });
+            
+            // 添加现金按钮
+            addCashBtn.addEventListener('click', function() {
+                const amount = parseFloat(cashAmountInput.value);
+                
+                if (isNaN(amount) || amount <= 0) {
+                    alert('请输入有效的现金金额');
+                    return;
+                }
+                
+                // 检查是否已存在现金持仓
+                const cashIndex = holdings.findIndex(h => h.symbol === 'CASH');
+                if (cashIndex !== -1) {
+                    // 更新现有现金持仓
+                    holdings[cashIndex].shares += amount;
+                } else {
+                    // 添加新现金持仓
+                    holdings.push({
+                        symbol: 'CASH',
+                        shares: amount,
+                        currentPrice: 1,
+                        previousClose: 1,
+                        change: 0,
+                        changePercent: 0,
+                        isCash: true
+                    });
+                }
+                
+                // 保存到localStorage
+                saveHoldings();
+                
+                // 更新UI
+                renderHoldingsList();
+                updateGroupStocksSelect();
+                updateChart();
+                updateSummary();
+                updateExportData();
+                
+                // 清空表单
+                cashAmountInput.value = '';
+            });
         });
         
         // 启动股价轮询
@@ -922,9 +1011,12 @@
             priceUpdateInterval = setInterval(updateAllStockPrices, 1 * 60 * 1000);
         }
         
-        // 更新所有股票价格
+        // 更新所有股票价格（跳过现金）
         function updateAllStockPrices() {
-            if (holdings.length === 0) return;
+            // 过滤掉现金持仓
+            const stockHoldings = holdings.filter(h => h.symbol !== 'CASH');
+            
+            if (stockHoldings.length === 0) return;
             
             // 保存原始按钮文本
             const originalText = updatePricesBtn.textContent;
@@ -935,13 +1027,14 @@
             // 依次更新每个持仓的股价
             let index = 0;
             const updateNextStock = () => {
-                if (index < holdings.length) {
-                    updateStockPrice(holdings[index].symbol, index).then(() => {
+                if (index < stockHoldings.length) {
+                    const holding = stockHoldings[index];
+                    updateStockPrice(holding.symbol, holdings.indexOf(holding)).then(() => {
                         index++;
                         setTimeout(updateNextStock, 50); // 每0.05秒更新一个股票
                         updateLastUpdateTime();
                     }).catch(error => {
-                        console.error(`更新股票 ${holdings[index].symbol} 价格失败:`, error);
+                        console.error(`更新股票 ${holding.symbol} 价格失败:`, error);
                         index++;
                         setTimeout(updateNextStock, 50);
                     });
@@ -963,6 +1056,9 @@
         // 更新单个股票价格
         async function updateStockPrice(symbol, index) {
             try {
+                // 跳过现金持仓
+                if (symbol === 'CASH') return false;
+                
                 const response = await fetch(`${API_BASE_URL}?symbol=${symbol}&token=${API_TOKEN}`);
                 const data = await response.json();
                 
@@ -985,6 +1081,10 @@
         
         // 计算持仓价值
         function calculateHoldingValue(holding) {
+            if (holding.symbol === 'CASH') {
+                return holding.shares; // 现金价值等于股数（金额）
+            }
+            
             if (holding.currentPrice && holding.shares) {
                 return holding.shares * holding.currentPrice;
             }
@@ -997,7 +1097,7 @@
             groupViewBtn.classList.toggle('active', currentView === 'group');
         }
         
-        // 添加持仓
+        // 添加股票持仓
         addBtn.addEventListener('click', function() {
             const symbol = stockSymbolInput.value.trim().toUpperCase();
             const shares = parseFloat(sharesInput.value);
@@ -1191,7 +1291,7 @@
             
             sortedHoldings.forEach((holding, index) => {
                 const holdingEl = document.createElement('div');
-                holdingEl.className = 'holding-item';
+                holdingEl.className = `holding-item ${holding.symbol === 'CASH' ? 'cash-holding' : ''}`;
                 
                 // 获取颜色分组信息
                 let colorGroupInfo = '';
@@ -1207,7 +1307,13 @@
                 
                 // 格式化价格信息
                 let priceInfo = '';
-                if (holding.currentPrice) {
+                if (holding.symbol === 'CASH') {
+                    priceInfo = `
+                        <div class="price-info">
+                            <span class="cash-label">现金</span>
+                        </div>
+                    `;
+                } else if (holding.currentPrice) {
                     const changeClass = holding.change >= 0 ? 'positive' : 'negative';
                     const changeSign = holding.change >= 0 ? '+' : '';
                     priceInfo = `
@@ -1220,16 +1326,16 @@
                 
                 holdingEl.innerHTML = `
                     <div class="holding-info">
-                        <div class="holding-symbol">${holding.symbol}</div>
+                        <div class="holding-symbol">${holding.symbol === 'CASH' ? '现金' : holding.symbol}</div>
                         <div class="holding-details">
-                            股数: ${holding.shares}
+                            ${holding.symbol === 'CASH' ? '金额' : '股数'}: ${holding.shares}
                             ${priceInfo}
-                            持仓价值: $${holdingValue.toFixed(2)}
+                            价值: $${holdingValue.toFixed(2)}
                         </div>
                         ${colorGroupInfo}
                     </div>
                     <div class="action-buttons">
-                        <button class="action-btn edit-holding-btn" data-index="${holdings.indexOf(holding)}">✏️</button>
+                        <button class="action-btn ${holding.symbol === 'CASH' ? 'edit-cash-btn' : 'edit-holding-btn'}" data-index="${holdings.indexOf(holding)}">✏️</button>
                         <button class="action-btn delete-holding-btn" data-index="${holdings.indexOf(holding)}">×</button>
                     </div>
                 `;
@@ -1250,11 +1356,19 @@
                 });
             });
             
-            // 添加编辑事件监听器
+            // 添加编辑股票事件监听器
             document.querySelectorAll('.edit-holding-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-index'));
                     openEditModal(index);
+                });
+            });
+            
+            // 添加编辑现金事件监听器
+            document.querySelectorAll('.edit-cash-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditCashModal(index);
                 });
             });
         }
@@ -1376,6 +1490,9 @@
             editGroupStocksSelect.innerHTML = '';
             
             holdings.forEach(holding => {
+                // 跳过现金持仓
+                if (holding.symbol === 'CASH') return;
+                
                 const option = document.createElement('option');
                 option.value = holding.symbol;
                 option.textContent = `${holding.symbol} (${holding.shares}股)`;
@@ -1405,9 +1522,24 @@
             editModal.style.display = 'flex';
         }
         
+        // 打开编辑现金持仓模态框
+        function openEditCashModal(index) {
+            editingIndex = index;
+            const holding = holdings[index];
+            
+            editCashAmountInput.value = holding.shares;
+            editCashModal.style.display = 'flex';
+        }
+        
         // 关闭编辑持仓模态框
         function closeEditModal() {
             editModal.style.display = 'none';
+            editingIndex = -1;
+        }
+        
+        // 关闭编辑现金持仓模态框
+        function closeEditCashModal() {
+            editCashModal.style.display = 'none';
             editingIndex = -1;
         }
         
@@ -1489,6 +1621,31 @@
             });
         });
         
+        // 保存现金持仓编辑
+        saveCashEditBtn.addEventListener('click', function() {
+            const amount = parseFloat(editCashAmountInput.value);
+            
+            if (isNaN(amount) || amount <= 0) {
+                alert('请输入有效的现金金额');
+                return;
+            }
+            
+            // 更新现金持仓数据
+            holdings[editingIndex].shares = amount;
+            
+            // 保存到localStorage
+            saveHoldings();
+            
+            // 更新UI
+            renderHoldingsList();
+            updateChart();
+            updateSummary();
+            updateExportData();
+            
+            // 关闭模态框
+            closeEditCashModal();
+        });
+        
         // 保存分组编辑
         saveGroupEditBtn.addEventListener('click', function() {
             const name = editGroupNameInput.value.trim();
@@ -1566,14 +1723,25 @@
         
         // 取消编辑
         cancelEditBtn.addEventListener('click', closeEditModal);
+        cancelCashEditBtn.addEventListener('click', closeEditCashModal);
         cancelGroupEditBtn.addEventListener('click', closeEditGroupModal);
         cancelColorGroupEditBtn.addEventListener('click', closeEditColorGroupModal);
-        closeModalBtn.addEventListener('click', closeEditModal);
+        closeModalBtn.forEach(btn => {
+            btn.addEventListener('click', function() {
+                closeEditModal();
+                closeEditCashModal();
+                closeEditGroupModal();
+                closeEditColorGroupModal();
+            });
+        });
         
         // 点击模态框外部关闭
         window.addEventListener('click', function(event) {
             if (event.target === editModal) {
                 closeEditModal();
+            }
+            if (event.target === editCashModal) {
+                closeEditCashModal();
             }
             if (event.target === editGroupModal) {
                 closeEditGroupModal();
@@ -1611,7 +1779,7 @@
                     return bValue - aValue;
                 });
                 
-                labels = sortedHoldings.map(h => h.symbol);
+                labels = sortedHoldings.map(h => h.symbol === 'CASH' ? '现金' : h.symbol);
                 const values = sortedHoldings.map(h => calculateHoldingValue(h));
                 const backgroundColors = sortedHoldings.map(h => getStockColor(h));
                 
@@ -1656,7 +1824,7 @@
                 
                 // 添加未分组股票（每个股票单独显示）
                 const ungroupedStocks = holdings.filter(holding => {
-                    return !groups.some(group => group.stocks.includes(holding.symbol));
+                    return holding.symbol !== 'CASH' && !groups.some(group => group.stocks.includes(holding.symbol));
                 });
                 
                 ungroupedStocks.forEach(stock => {
@@ -1667,6 +1835,17 @@
                         isGroup: false
                     });
                 });
+                
+                // 添加现金持仓（始终显示）
+                const cashHolding = holdings.find(h => h.symbol === 'CASH');
+                if (cashHolding) {
+                    groupData.push({
+                        label: '现金',
+                        value: calculateHoldingValue(cashHolding),
+                        color: '#85bb65',
+                        isGroup: false
+                    });
+                }
                 
                 // 按价值降序排序
                 groupData.sort((a, b) => b.value - a.value);
@@ -1692,6 +1871,11 @@
         
         // 获取股票颜色
         function getStockColor(stock) {
+            // 现金使用特殊颜色
+            if (stock.symbol === 'CASH') {
+                return '#85bb65';
+            }
+            
             // 如果股票有颜色分组，使用颜色分组的颜色
             if (stock.colorGroup) {
                 const colorGroup = colorGroups.find(cg => cg.id === stock.colorGroup);
@@ -1803,12 +1987,15 @@
         // 更新摘要信息
         function updateSummary() {
             const totalValue = holdings.reduce((sum, h) => sum + calculateHoldingValue(h), 0);
-            const stockCount = holdings.length;
+            const stockCount = holdings.filter(h => h.symbol !== 'CASH').length;
+            const cashHolding = holdings.find(h => h.symbol === 'CASH');
+            const cashAmount = cashHolding ? cashHolding.shares : 0;
             const groupCount = groups.length;
             const colorGroupCount = colorGroups.length;
             
             totalValueEl.textContent = `$${totalValue.toFixed(2)}`;
             stockCountEl.textContent = stockCount;
+            cashAmountValueEl.textContent = `$${cashAmount.toFixed(2)}`;
             groupCountEl.textContent = groupCount;
             colorGroupCountEl.textContent = colorGroupCount;
         }
