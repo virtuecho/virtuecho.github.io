@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高效集装箱装货模拟器（支持万级货物）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 15px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #1a73e8, #6c8ef5);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        .description {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .simulation-view {
+            flex: 2;
+            min-width: 700px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        h2 {
+            font-size: 1.4rem;
+            margin: 15px 0 15px 0;
+            color: #1a73e8;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .input-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        .unit {
+            font-size: 0.85rem;
+            color: #666;
+            margin-left: 4px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .checkbox-group input {
+            margin-right: 8px;
+        }
+        button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: background 0.2s;
+            margin: 5px 5px 5px 0;
+        }
+        button:hover {
+            background: #0d62d9;
+        }
+        button.delete-btn {
+            background: #ea4335;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+        button.start-btn {
+            background: #34a853;
+            padding: 12px 20px;
+            font-size: 1.05rem;
+        }
+        button.start-btn:hover {
+            background: #2e8b47;
+        }
+        #container-canvas {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #1a73e8;
+            border-radius: 5px;
+            background: #fafafa;
+            margin: 10px 0;
+        }
+        .view-controls {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .view-btn {
+            padding: 6px 12px;
+            background: #e8f0fe;
+            color: #1a73e8;
+            border: 1px solid #1a73e8;
+            border-radius: 4px;
+        }
+        .view-btn.active {
+            background: #1a73e8;
+            color: white;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding: 12px;
+            background: #e8f0fe;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #1a73e8;
+            font-size: 1.2rem;
+        }
+        .cargo-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .cargo-item {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 0.85rem;
+        }
+        .cargo-color {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        .cargo-info {
+            flex: 1;
+        }
+        .status-placed { color: #34a853; font-weight: bold; }
+        .status-not-placed { color: #ea4335; font-weight: bold; }
+        .cargo-actions button {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            .panel, .simulation-view { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>高效集装箱装货模拟器</h1>
+            <p class="description">支持上万货物 · 智能空间分割算法 · 实时可视化（单位: CM）</p>
+        </header>
+        <div class="main-content">
+            <div class="panel">
+                <h2>集装箱设置</h2>
+                <div class="input-group">
+                    <label>预设类型:</label>
+                    <select id="container-preset">
+                        <option value="custom">自定义尺寸</option>
+                        <option value="20GP">20英尺 (569×215×219)</option>
+                        <option value="40GP">40英尺 (1189×215×219)</option>
+                        <option value="40HC">40英尺高柜 (1189×215×249)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>长度 <span class="unit">(CM)</span></label>
+                    <input type="number" id="container-length" value="569" min="1" max="2000">
+                </div>
+                <div class="input-group">
+                    <label>宽度 <span class="unit">(CM)</span></label>
+                    <input type="number" id="container-width" value="215" min="1" max="2000">
+                </div>
+                <div class="input-group">
+                    <label>高度 <span class="unit">(CM)</span></label>
+                    <input type="number" id="container-height" value="219" min="1" max="2000">
+                </div>
+                <button id="update-container">更新集装箱</button>
+            </div>
+
+            <div class="panel">
+                <h2>货物设置</h2>
+                <div class="input-group">
+                    <label>长度 <span class="unit">(CM)</span></label>
+                    <input type="number" id="cargo-length" value="30" min="1" max="1000">
+                </div>
+                <div class="input-group">
+                    <label>宽度 <span class="unit">(CM)</span></label>
+                    <input type="number" id="cargo-width" value="20" min="1" max="1000">
+                </div>
+                <div class="input-group">
+                    <label>高度 <span class="unit">(CM)</span></label>
+                    <input type="number" id="cargo-height" value="20" min="1" max="1000">
+                </div>
+                <div class="input-group">
+                    <label>数量（可输入 1~10000）</label>
+                    <input type="number" id="cargo-quantity" value="10" min="1" max="10000">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="default-stacking" checked>
+                    <label>默认允许堆叠</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="default-rotation" checked>
+                    <label>默认允许水平旋转</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="default-full-rotation">
+                    <label>默认允许任意旋转</label>
+                </div>
+                <button id="add-cargo">添加货物</button>
+                <button id="generate-random">生成1000随机货物</button>
+                <button id="reset">重置</button>
+                <button id="start-packing" class="start-btn">开始智能装箱</button>
+            </div>
+
+            <div class="simulation-view">
+                <h2>集装箱视图</h2>
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="3d">3D视图</button>
+                    <button class="view-btn" data-view="top">俯视图</button>
+                    <button class="view-btn" data-view="front">前视图</button>
+                    <button class="view-btn" data-view="side">侧视图</button>
+                </div>
+                <canvas id="container-canvas"></canvas>
+                <div class="stats">
+                    <div>空间利用率: <span id="utilization-rate" class="stat-value">0%</span></div>
+                    <div>已装/总数: <span id="placed-count" class="stat-value">0/0</span></div>
+                    <div>总体积: <span id="total-volume" class="stat-value">0 CBM</span></div>
+                </div>
+                <h2>货物列表（最新100条）</h2>
+                <div class="cargo-list" id="cargo-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const COLORS = ['#FF5252', '#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#00BCD4', '#8BC34A', '#FF9800'];
+        const CONTAINER_PRESETS = {
+            '20GP': { length: 569, width: 215, height: 219 },
+            '40GP': { length: 1189, width: 215, height: 219 },
+            '40HC': { length: 1189, width: 215, height: 249 }
+        };
+
+        let container = { length: 569, width: 215, height: 219, blocks: [] };
+        let cargos = [];
+        let currentView = '3d';
+        let canvas, ctx;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('container-canvas');
+            ctx = canvas.getContext('2d');
+            setupCanvasSize();
+            window.addEventListener('resize', setupCanvasSize);
+
+            // 绑定事件
+            document.getElementById('update-container').onclick = updateContainer;
+            document.getElementById('add-cargo').onclick = addCargo;
+            document.getElementById('generate-random').onclick = () => generateRandomCargos(1000);
+            document.getElementById('reset').onclick = resetSimulation;
+            document.getElementById('start-packing').onclick = packContainers;
+
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.onclick = function() {
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentView = this.dataset.view;
+                    drawContainer();
+                };
+            });
+
+            document.getElementById('container-preset').onchange = function() {
+                if (this.value !== 'custom') {
+                    const p = CONTAINER_PRESETS[this.value];
+                    document.getElementById('container-length').value = p.length;
+                    document.getElementById('container-width').value = p.width;
+                    document.getElementById('container-height').value = p.height;
+                    updateContainer();
+                }
+            };
+
+            drawContainer();
+            updateStats();
+        });
+
+        function setupCanvasSize() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = Math.min(rect.width, 800);
+            canvas.height = 400;
+        }
+
+        function updateContainer() {
+            const L = +document.getElementById('container-length').value;
+            const W = +document.getElementById('container-width').value;
+            const H = +document.getElementById('container-height').value;
+            if (L > 0 && W > 0 && H > 0) {
+                container = { length: L, width: W, height: H, blocks: [] };
+                drawContainer();
+                updateStats();
+            }
+        }
+
+        function addCargo() {
+            const L = +document.getElementById('cargo-length').value;
+            const W = +document.getElementById('cargo-width').value;
+            const H = +document.getElementById('cargo-height').value;
+            const Q = +document.getElementById('cargo-quantity').value;
+            if (L <= 0 || W <= 0 || H <= 0 || Q <= 0 || Q > 10000) {
+                alert('请检查货物尺寸和数量（1~10000）');
+                return;
+            }
+            const stacking = document.getElementById('default-stacking').checked;
+            const rotation = document.getElementById('default-rotation').checked;
+            const fullRot = document.getElementById('default-full-rotation').checked;
+            for (let i = 0; i < Q; i++) {
+                cargos.push({
+                    id: Date.now() + i,
+                    length: L, width: W, height: H,
+                    color: COLORS[cargos.length % COLORS.length],
+                    placed: false,
+                    position: null,
+                    rotation: null,
+                    allowStacking: stacking,
+                    allowRotation: rotation,
+                    allowFullRotation: fullRot
+                });
+            }
+            updateCargoList();
+            updateStats();
+        }
+
+        function generateRandomCargos(n = 1000) {
+            for (let i = 0; i < n; i++) {
+                cargos.push({
+                    id: Date.now() + i,
+                    length: 10 + Math.floor(Math.random() * 90),
+                    width: 10 + Math.floor(Math.random() * 60),
+                    height: 10 + Math.floor(Math.random() * 50),
+                    color: COLORS[i % COLORS.length],
+                    placed: false,
+                    position: null,
+                    rotation: null,
+                    allowStacking: Math.random() > 0.3,
+                    allowRotation: Math.random() > 0.5,
+                    allowFullRotation: false
+                });
+            }
+            updateCargoList();
+            updateStats();
+        }
+
+        function resetSimulation() {
+            container.blocks = [];
+            cargos = [];
+            drawContainer();
+            updateStats();
+            document.getElementById('cargo-list').innerHTML = '';
+        }
+
+        function deleteCargo(id) {
+            cargos = cargos.filter(c => c.id !== id);
+            updateCargoList();
+            updateStats();
+        }
+
+        function updateCargoSettings(id, key, value) {
+            const c = cargos.find(x => x.id === id);
+            if (c) c[key] = value;
+        }
+
+        // ========================
+        // 高效装箱算法（核心）
+        // ========================
+        function packContainers() {
+            if (cargos.length === 0) return alert('请先添加货物！');
+
+            const startTime = performance.now();
+            container.blocks = [];
+            cargos.forEach(c => { c.placed = false; c.position = null; c.rotation = null; });
+
+            // 按体积降序排序（大件优先）
+            const sorted = [...cargos].sort((a, b) =>
+                (b.length * b.width * b.height) - (a.length * a.width * a.height)
+            );
+
+            // 关键：维护一个“可用空间点”列表（前沿点）
+            const availablePoints = [{ x: 0, y: 0, z: 0 }];
+
+            for (const cargo of sorted) {
+                let placed = false;
+                const rotations = getRotations(cargo);
+
+                // 尝试每个可用点
+                for (let i = 0; i < availablePoints.length && !placed; i++) {
+                    const pt = availablePoints[i];
+                    for (const [l, w, h] of rotations) {
+                        if (pt.x + l <= container.length &&
+                            pt.y + w <= container.width &&
+                            pt.z + h <= container.height &&
+                            !overlaps(pt.x, pt.y, pt.z, l, w, h)) {
+
+                            // 放置成功
+                            container.blocks.push([pt.x, pt.y, pt.z, l, w, h]);
+                            cargo.placed = true;
+                            cargo.position = [pt.x, pt.y, pt.z];
+                            cargo.rotation = [l, w, h];
+                            placed = true;
+
+                            // 新增3个前沿点（右、前、上）
+                            if (pt.x + l < container.length)
+                                availablePoints.push({ x: pt.x + l, y: pt.y, z: pt.z });
+                            if (pt.y + w < container.width)
+                                availablePoints.push({ x: pt.x, y: pt.y + w, z: pt.z });
+                            if (cargo.allowStacking && pt.z + h < container.height)
+                                availablePoints.push({ x: pt.x, y: pt.y, z: pt.z + h });
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            console.log(`装箱完成，耗时: ${(performance.now() - startTime).toFixed(2)} ms`);
+            drawContainer();
+            updateCargoList();
+            updateStats();
+        }
+
+        function getRotations(cargo) {
+            if (cargo.allowFullRotation) {
+                return [
+                    [cargo.length, cargo.width, cargo.height],
+                    [cargo.length, cargo.height, cargo.width],
+                    [cargo.width, cargo.length, cargo.height],
+                    [cargo.width, cargo.height, cargo.length],
+                    [cargo.height, cargo.length, cargo.width],
+                    [cargo.height, cargo.width, cargo.length]
+                ];
+            } else if (cargo.allowRotation) {
+                return [
+                    [cargo.length, cargo.width, cargo.height],
+                    [cargo.width, cargo.length, cargo.height]
+                ];
+            } else {
+                return [[cargo.length, cargo.width, cargo.height]];
+            }
+        }
+
+        function overlaps(x, y, z, l, w, h) {
+            for (const [px, py, pz, pl, pw, ph] of container.blocks) {
+                if (!(x + l <= px || x >= px + pl ||
+                      y + w <= py || y >= py + pw ||
+                      z + h <= pz || z >= pz + ph)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // ========================
+        // 绘图部分（保持不变）
+        // ========================
+        function drawContainer() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            switch (currentView) {
+                case '3d': draw3DView(); break;
+                case 'top': drawTopView(); break;
+                case 'front': drawFrontView(); break;
+                case 'side': drawSideView(); break;
+            }
+        }
+
+        function draw3DView() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 0.6;
+            const angle = Math.PI / 6;
+            const cosA = Math.cos(angle), sinA = Math.sin(angle);
+
+            function project(x, y, z) {
+                const isoX = (x - y) * cosA;
+                const isoY = (x + y) * sinA - z;
+                return { x: centerX + isoX * scale, y: centerY + isoY * scale };
+            }
+
+            // 画集装箱
+            const pts = [
+                [0,0,0], [container.length,0,0], [container.length,container.width,0], [0,container.width,0],
+                [0,0,container.height], [container.length,0,container.height], [container.length,container.width,container.height], [0,container.width,container.height]
+            ].map(p => project(...p));
+
+            ctx.strokeStyle = '#1a73e8';
+            ctx.lineWidth = 2;
+            ctx.fillStyle = 'rgba(26,115,232,0.05)';
+            ctx.beginPath();
+            [0,1,2,3].forEach(i => ctx.lineTo(pts[i].x, pts[i].y));
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // 画货物（最多画前200个，避免卡顿）
+            const toDraw = container.blocks.slice(0, 200);
+            toDraw.forEach((block, idx) => {
+                const [x,y,z,l,w,h] = block;
+                const color = COLORS[idx % COLORS.length];
+                const p8 = [
+                    [x,y,z], [x+l,y,z], [x+l,y+w,z], [x,y+w,z],
+                    [x,y,z+h], [x+l,y,z+h], [x+l,y+w,z+h], [x,y+w,z+h]
+                ].map(p => project(...p));
+
+                ctx.fillStyle = color;
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                [0,1,2,3].forEach(i => ctx.lineTo(p8[i].x, p8[i].y));
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // 顶部
+                ctx.beginPath();
+                [4,5,6,7].forEach(i => ctx.lineTo(p8[i].x, p8[i].y));
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // 竖线
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    ctx.moveTo(p8[i].x, p8[i].y);
+                    ctx.lineTo(p8[i+4].x, p8[i+4].y);
+                }
+                ctx.stroke();
+            });
+        }
+
+        function drawTopView() {
+            const scale = Math.min(canvas.width / container.length, canvas.height / container.width) * 0.85;
+            const ox = (canvas.width - container.length * scale) / 2;
+            const oy = (canvas.height - container.width * scale) / 2;
+            ctx.strokeStyle = '#1a73e8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(ox, oy, container.length * scale, container.width * scale);
+            container.blocks.slice(0, 500).forEach(block => {
+                const [x,y,z,l,w,h] = block;
+                ctx.fillStyle = COLORS[(l+w+h) % COLORS.length];
+                ctx.fillRect(ox + x*scale, oy + y*scale, l*scale, w*scale);
+                ctx.strokeRect(ox + x*scale, oy + y*scale, l*scale, w*scale);
+            });
+        }
+
+        function drawFrontView() {
+            const scale = Math.min(canvas.width / container.length, canvas.height / container.height) * 0.85;
+            const ox = (canvas.width - container.length * scale) / 2;
+            const oy = (canvas.height - container.height * scale) / 2;
+            ctx.strokeStyle = '#1a73e8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(ox, oy, container.length * scale, container.height * scale);
+            container.blocks.slice(0, 500).forEach(block => {
+                const [x,y,z,l,w,h] = block;
+                ctx.fillStyle = COLORS[(l+w+h) % COLORS.length];
+                ctx.fillRect(ox + x*scale, oy + (container.height - z - h)*scale, l*scale, h*scale);
+                ctx.strokeRect(ox + x*scale, oy + (container.height - z - h)*scale, l*scale, h*scale);
+            });
+        }
+
+        function drawSideView() {
+            const scale = Math.min(canvas.width / container.width, canvas.height / container.height) * 0.85;
+            const ox = (canvas.width - container.width * scale) / 2;
+            const oy = (canvas.height - container.height * scale) / 2;
+            ctx.strokeStyle = '#1a73e8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(ox, oy, container.width * scale, container.height * scale);
+            container.blocks.slice(0, 500).forEach(block => {
+                const [x,y,z,l,w,h] = block;
+                ctx.fillStyle = COLORS[(l+w+h) % COLORS.length];
+                ctx.fillRect(ox + y*scale, oy + (container.height - z - h)*scale, w*scale, h*scale);
+                ctx.strokeRect(ox + y*scale, oy + (container.height - z - h)*scale, w*scale, h*scale);
+            });
+        }
+
+        function updateCargoList() {
+            const list = document.getElementById('cargo-list');
+            // 只显示最新100条，避免 DOM 过大
+            const recent = cargos.slice(-100).reverse();
+            list.innerHTML = recent.map(cargo => {
+                const vol = (cargo.length * cargo.width * cargo.height / 1e6).toFixed(4);
+                const rotInfo = cargo.rotation ? ` (${cargo.rotation.join('×')})` : '';
+                const status = cargo.placed ?
+                    `<span class="status-placed">已装 ${cargo.position.join(',')}</span>` :
+                    '<span class="status-not-placed">未装</span>';
+                return `
+                    <div class="cargo-item">
+                        <div class="cargo-color" style="background:${cargo.color}"></div>
+                        <div class="cargo-info">
+                            ${cargo.length}×${cargo.width}×${cargo.height}${rotInfo} | ${vol} CBM<br>
+                            ${status}
+                        </div>
+                        <div class="cargo-actions">
+                            <button class="delete-btn" onclick="deleteCargo(${cargo.id})">删</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const placed = cargos.filter(c => c.placed).length;
+            const used = container.blocks.reduce((s, b) => s + b[3]*b[4]*b[5], 0);
+            const totalVol = container.length * container.width * container.height;
+            const util = totalVol ? (used / totalVol * 100).toFixed(2) : 0;
+            const totalCBM = (totalVol / 1e6).toFixed(2);
+            document.getElementById('placed-count').textContent = `${placed}/${cargos.length}`;
+            document.getElementById('utilization-rate').textContent = `${util}%`;
+            document.getElementById('total-volume').textContent = `${totalCBM} CBM`;
+        }
+    </script>
+</body>
+</html>
